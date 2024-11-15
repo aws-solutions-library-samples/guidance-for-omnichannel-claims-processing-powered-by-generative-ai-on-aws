@@ -152,7 +152,6 @@ Before deploying the guidance code, ensure that the following required tools hav
 
 
 VPC Availability: Ensure that at least one additional VPC slot is available in your account, as the default limit is typically 5 VPCs per region.
-Amazon Bedrock Model Setting: Verify your Bedrock model settings to ensure compatibility with the deployment.
 
 ### Requesting Access to AWS Bedrock
 
