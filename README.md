@@ -202,11 +202,6 @@ If you have an existing Amazon Pinpoint Project and a phone number with two way 
 
 ### 2. CDK deployment
 
-Refer the Code Walkthrough and Deployment video given below:
-
-![Code Walkthrough and Deployment video](source/Assets/GP-FSI-ClaimsProcessing-CodeWalkthrough-Deployment-CXsetup.mp4).
-
-
    1. In your IDE (example: AWS Cloudshell), use the terminal to clone the repository:
        ```
        git clone https://github.com/aws-solutions-library-samples/guidance-for-omnichannel-claims-processing-powered-by-generative-ai-on-aws.git
@@ -311,13 +306,6 @@ Refer the Code Walkthrough and Deployment video given below:
       - Next, you can keep the chunking strategy as "default", select `Titan Text Embeddings v2` model to embed the information and select `Quick create a new vector store` in order to have default option for the vector DB when creating the knowledge base. Note that Knowledge Base can take approximately 10 minutes to be created.
       - Take note of the `knowledge base ID` once the knowledge base has been created. If you do this manually, this value needs to be added/updated to the DynamoDB table named `GP-FSI-ClaimsProcessing-FM`. 
       - [Refer](https://docs.aws.amazon.com/bedrock/latest/userguide/knowledge-base-create.html) to create your own Bedrock Knowledge Base with Opensearch serverless vector DB in your account.
-
-
-## Guidance Demo
-
-Now that all the configuration steps are completed, you should be able to open the Cloudfront URL as detailed above and start playing with the app.
-
-![DEMO video](source/Assets/GP_FSI-ClaimsPorcessing-Demo.mp4).
 
 ## Submit FNOL
 
