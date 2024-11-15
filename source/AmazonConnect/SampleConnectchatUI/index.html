@@ -1,0 +1,68 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>Login Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+        form {
+            margin-top: 20px;
+        }
+        input[type="text"], input[type="password"] {
+            padding: 5px;
+            margin: 5px;
+        }
+        button {
+            padding: 5px 10px;
+            margin-top: 10px;
+        }
+    </style>
+    <script>
+        function authenticate() {
+            var username = document.getElementById("username").value;
+            var password = document.getElementById("password").value;
+
+            // Replace this with your actual authentication logic
+            if (username === "MariaG" && password === "Test") {
+                //alert("User Authenticated");
+                window.location.href = "home.html";
+            } else {
+                alert("Invalid username or password");
+            }
+        }
+    </script>
+</head>
+<body>
+    
+    <h1>Login</h1>
+    <img src="background.png" alt="Logo" width="400" height="400">
+    <div class="text-center">
+        <p style="text-align: center;">
+            Welcome. Please enter the details below and click Login.
+        </p>
+        <p style="text-align: center;">
+            <label>
+                LoginName:
+                <input type="username" id="username" name="customer_username" autofocus="autofocus" required="required" />
+                <!-- <input id="name" type="text" required="required" /> -->
+            </label>
+        </p>
+
+        <p style="text-align: center;">
+            <label>
+                Password:
+                <input type="password" id="password" name="customer_password" required />
+            </label>
+        </p>
+
+  
+
+        <button type="button" onClick="authenticate()">Login</button>
+
+    </div>
+</body>
+</html>
+
+

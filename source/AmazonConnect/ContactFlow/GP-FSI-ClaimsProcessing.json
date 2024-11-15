@@ -1,0 +1,420 @@
+{
+  "Version": "2019-10-30",
+  "StartAction": "8b5050e8-26a3-45e5-a6a4-f45fec501990",
+  "Metadata": {
+    "entryPointPosition": {
+      "x": 28,
+      "y": 7.2
+    },
+    "ActionMetadata": {
+      "8b5050e8-26a3-45e5-a6a4-f45fec501990": {
+        "position": {
+          "x": 54.4,
+          "y": 116.8
+        }
+      },
+      "a87d5a40-366f-4d50-9291-7ca38aa78f4e": {
+        "position": {
+          "x": 53.6,
+          "y": 402.4
+        }
+      },
+      "f8b972b6-dc00-4bde-9bf8-19efbb36d9cd": {
+        "position": {
+          "x": 1633.6,
+          "y": 222.4
+        }
+      },
+      "dab14dc1-dc5f-405b-86c4-d38829c4c983": {
+        "position": {
+          "x": 308,
+          "y": 102.4
+        }
+      },
+      "36daf108-0170-433f-9510-2fea6d38e625": {
+        "position": {
+          "x": 868.8,
+          "y": 434.4
+        }
+      },
+      "a6779232-7a12-452e-9df3-3a5a401dc797": {
+        "position": {
+          "x": 1400,
+          "y": 27.2
+        }
+      },
+      "a123147d-b9ad-45dc-b693-a3994d7bb6fd": {
+        "position": {
+          "x": 1136,
+          "y": 25.6
+        },
+        "parameters": {
+          "QueueId": {
+            "displayName": "BasicQueue"
+          }
+        },
+        "queue": {
+          "text": "BasicQueue"
+        }
+      },
+      "8253a110-fb43-4911-b91d-7c74286074aa": {
+        "position": {
+          "x": 1404.8,
+          "y": 288.8
+        }
+      },
+      "8038bd6e-de96-4014-b0e4-7fb01f150972": {
+        "position": {
+          "x": 938.4,
+          "y": 203.2
+        },
+        "parameters": {
+          "Attributes": {
+            "CaseNumber": {
+              "useDynamic": true
+            }
+          }
+        },
+        "dynamicParams": [
+          "CaseNumber"
+        ]
+      },
+      "96e5ee51-6c85-4be7-9e56-922cf1af4cdf": {
+        "position": {
+          "x": 1162.4,
+          "y": 212.8
+        },
+        "parameters": {
+          "LambdaFunctionARN": {
+            "displayName": "GP-FSI-ClaimsProcessing-CustomerNotification"
+          },
+          "LambdaInvocationAttributes": {
+            "Lexdata": {
+              "useDynamic": true
+            }
+          }
+        },
+        "dynamicMetadata": {
+          "Lexdata": true
+        }
+      },
+      "24ac4630-4ec5-4f3a-9110-88b8d3334492": {
+        "position": {
+          "x": 618.4,
+          "y": 12.8
+        },
+        "parameters": {
+          "LexV2Bot": {
+            "AliasArn": {
+              "displayName": "Prod",
+              "useLexBotDropdown": true,
+              "lexV2BotName": "GP-FSI-ClaimsProcessing"
+            }
+          }
+        },
+        "useLexBotDropdown": true,
+        "lexV2BotName": "GP-FSI-ClaimsProcessing",
+        "lexV2BotAliasName": "Prod",
+        "conditionMetadata": [
+          {
+            "id": "d9faeae8-7f42-4928-8c49-259badaae836",
+            "operator": {
+              "name": "Equals",
+              "value": "Equals",
+              "shortDisplay": "="
+            },
+            "value": "Agent"
+          },
+          {
+            "id": "b6dfd9d1-0190-40e7-b47f-79044e94f63f",
+            "operator": {
+              "name": "Equals",
+              "value": "Equals",
+              "shortDisplay": "="
+            },
+            "value": "VerifyCustomer"
+          },
+          {
+            "id": "6d00e9d5-7b09-4197-b4b6-4a3d560376cf",
+            "operator": {
+              "name": "Equals",
+              "value": "Equals",
+              "shortDisplay": "="
+            },
+            "value": "CheckClaimStatus"
+          },
+          {
+            "id": "fac3f2d4-6d93-4e79-b385-a2b0f5785138",
+            "operator": {
+              "name": "Equals",
+              "value": "Equals",
+              "shortDisplay": "="
+            },
+            "value": "GetClaimsFAQ"
+          },
+          {
+            "id": "ac7a9ff4-a9fe-4dad-a13e-c8f068f825ea",
+            "operator": {
+              "name": "Equals",
+              "value": "Equals",
+              "shortDisplay": "="
+            },
+            "value": "GreetCustomer"
+          }
+        ]
+      },
+      "2a7034f5-a73a-437b-8d02-3b4d3a1e0879": {
+        "position": {
+          "x": 448,
+          "y": 431.2
+        }
+      }
+    },
+    "Annotations": [],
+    "name": "GP-FSI-ClaimsProcessing",
+    "description": "GP-FI-ClaimsProcessing",
+    "type": "contactFlow",
+    "status": "PUBLISHED",
+    "hash": {}
+  },
+  "Actions": [
+    {
+      "Parameters": {
+        "FlowLoggingBehavior": "Enabled"
+      },
+      "Identifier": "8b5050e8-26a3-45e5-a6a4-f45fec501990",
+      "Type": "UpdateFlowLoggingBehavior",
+      "Transitions": {
+        "NextAction": "a87d5a40-366f-4d50-9291-7ca38aa78f4e"
+      }
+    },
+    {
+      "Parameters": {
+        "RecordingBehavior": {
+          "RecordedParticipants": []
+        }
+      },
+      "Identifier": "a87d5a40-366f-4d50-9291-7ca38aa78f4e",
+      "Type": "UpdateContactRecordingBehavior",
+      "Transitions": {
+        "NextAction": "dab14dc1-dc5f-405b-86c4-d38829c4c983"
+      }
+    },
+    {
+      "Parameters": {},
+      "Identifier": "f8b972b6-dc00-4bde-9bf8-19efbb36d9cd",
+      "Type": "DisconnectParticipant",
+      "Transitions": {}
+    },
+    {
+      "Parameters": {
+        "Text": "For your protection, please do not include sensitive personal information, such as social security number, credit/debit card number, or health/medical information in your chat session."
+      },
+      "Identifier": "dab14dc1-dc5f-405b-86c4-d38829c4c983",
+      "Type": "MessageParticipant",
+      "Transitions": {
+        "NextAction": "24ac4630-4ec5-4f3a-9110-88b8d3334492",
+        "Errors": [
+          {
+            "NextAction": "24ac4630-4ec5-4f3a-9110-88b8d3334492",
+            "ErrorType": "NoMatchingError"
+          }
+        ]
+      }
+    },
+    {
+      "Parameters": {
+        "Text": "Thanks for reaching out have a good day"
+      },
+      "Identifier": "36daf108-0170-433f-9510-2fea6d38e625",
+      "Type": "MessageParticipant",
+      "Transitions": {
+        "NextAction": "f8b972b6-dc00-4bde-9bf8-19efbb36d9cd",
+        "Errors": [
+          {
+            "NextAction": "f8b972b6-dc00-4bde-9bf8-19efbb36d9cd",
+            "ErrorType": "NoMatchingError"
+          }
+        ]
+      }
+    },
+    {
+      "Parameters": {},
+      "Identifier": "a6779232-7a12-452e-9df3-3a5a401dc797",
+      "Type": "TransferContactToQueue",
+      "Transitions": {
+        "NextAction": "f8b972b6-dc00-4bde-9bf8-19efbb36d9cd",
+        "Errors": [
+          {
+            "NextAction": "f8b972b6-dc00-4bde-9bf8-19efbb36d9cd",
+            "ErrorType": "QueueAtCapacity"
+          },
+          {
+            "NextAction": "f8b972b6-dc00-4bde-9bf8-19efbb36d9cd",
+            "ErrorType": "NoMatchingError"
+          }
+        ]
+      }
+    },
+    {
+      "Parameters": {
+        "QueueId": "arn:aws:connect:<Replace with your Region ID>:<Replace with your Account ID>:instance/93d7e7cf-20be-4d4d-bdd5-8298057b7bd9/queue/4c6d58ac-f556-4aad-85c2-31e68d643ad7"
+      },
+      "Identifier": "a123147d-b9ad-45dc-b693-a3994d7bb6fd",
+      "Type": "UpdateContactTargetQueue",
+      "Transitions": {
+        "NextAction": "a6779232-7a12-452e-9df3-3a5a401dc797",
+        "Errors": [
+          {
+            "NextAction": "a6779232-7a12-452e-9df3-3a5a401dc797",
+            "ErrorType": "NoMatchingError"
+          }
+        ]
+      }
+    },
+    {
+      "Parameters": {
+        "SSML": "Thanks for choosing reaching out to us. Once you upload the documents as instructed we will keep you posted further updates on this. You might have recieved an SMS stating the same as well"
+      },
+      "Identifier": "8253a110-fb43-4911-b91d-7c74286074aa",
+      "Type": "MessageParticipant",
+      "Transitions": {
+        "NextAction": "f8b972b6-dc00-4bde-9bf8-19efbb36d9cd",
+        "Errors": [
+          {
+            "NextAction": "f8b972b6-dc00-4bde-9bf8-19efbb36d9cd",
+            "ErrorType": "NoMatchingError"
+          }
+        ]
+      }
+    },
+    {
+      "Parameters": {
+        "Attributes": {
+          "CaseNumber": "$.Lex.SessionAttributes.CaseNumber"
+        },
+        "TargetContact": "Current"
+      },
+      "Identifier": "8038bd6e-de96-4014-b0e4-7fb01f150972",
+      "Type": "UpdateContactAttributes",
+      "Transitions": {
+        "NextAction": "96e5ee51-6c85-4be7-9e56-922cf1af4cdf",
+        "Errors": [
+          {
+            "NextAction": "96e5ee51-6c85-4be7-9e56-922cf1af4cdf",
+            "ErrorType": "NoMatchingError"
+          }
+        ]
+      }
+    },
+    {
+      "Parameters": {
+        "LambdaFunctionARN": "arn:aws:lambda:<Replace with your Region ID>:<Replace with your Account ID>:function:GP-FSI-ClaimsProcessing-CustomerNotification",
+        "InvocationTimeLimitSeconds": "3",
+        "LambdaInvocationAttributes": {
+          "Lexdata": "$.Attributes.CaseNumber"
+        },
+        "ResponseValidation": {
+          "ResponseType": "STRING_MAP"
+        }
+      },
+      "Identifier": "96e5ee51-6c85-4be7-9e56-922cf1af4cdf",
+      "Type": "InvokeLambdaFunction",
+      "Transitions": {
+        "NextAction": "8253a110-fb43-4911-b91d-7c74286074aa",
+        "Errors": [
+          {
+            "NextAction": "8253a110-fb43-4911-b91d-7c74286074aa",
+            "ErrorType": "NoMatchingError"
+          }
+        ]
+      }
+    },
+    {
+      "Parameters": {
+        "Text": "Hi! I'm your virtual assistant, created to assist you with claims questions. Select an option or ask me a question to get started.\n\nFile a claim , Claim status , Something else",
+        "LexV2Bot": {
+          "AliasArn": "arn:aws:lex:<Replace with your Region ID>:<Replace with your Account ID>:bot-alias/<Replace with your Bot ID>/<Replace with your Bot Alias ID>"
+        }
+      },
+      "Identifier": "24ac4630-4ec5-4f3a-9110-88b8d3334492",
+      "Type": "ConnectParticipantWithLexBot",
+      "Transitions": {
+        "NextAction": "36daf108-0170-433f-9510-2fea6d38e625",
+        "Conditions": [
+          {
+            "NextAction": "a123147d-b9ad-45dc-b693-a3994d7bb6fd",
+            "Condition": {
+              "Operator": "Equals",
+              "Operands": [
+                "Agent"
+              ]
+            }
+          },
+          {
+            "NextAction": "8038bd6e-de96-4014-b0e4-7fb01f150972",
+            "Condition": {
+              "Operator": "Equals",
+              "Operands": [
+                "VerifyCustomer"
+              ]
+            }
+          },
+          {
+            "NextAction": "a123147d-b9ad-45dc-b693-a3994d7bb6fd",
+            "Condition": {
+              "Operator": "Equals",
+              "Operands": [
+                "CheckClaimStatus"
+              ]
+            }
+          },
+          {
+            "NextAction": "2a7034f5-a73a-437b-8d02-3b4d3a1e0879",
+            "Condition": {
+              "Operator": "Equals",
+              "Operands": [
+                "GetClaimsFAQ"
+              ]
+            }
+          },
+          {
+            "NextAction": "36daf108-0170-433f-9510-2fea6d38e625",
+            "Condition": {
+              "Operator": "Equals",
+              "Operands": [
+                "GreetCustomer"
+              ]
+            }
+          }
+        ],
+        "Errors": [
+          {
+            "NextAction": "a123147d-b9ad-45dc-b693-a3994d7bb6fd",
+            "ErrorType": "NoMatchingCondition"
+          },
+          {
+            "NextAction": "36daf108-0170-433f-9510-2fea6d38e625",
+            "ErrorType": "NoMatchingError"
+          }
+        ]
+      }
+    },
+    {
+      "Parameters": {
+        "Text": "Is there anything else I can help you. "
+      },
+      "Identifier": "2a7034f5-a73a-437b-8d02-3b4d3a1e0879",
+      "Type": "MessageParticipant",
+      "Transitions": {
+        "NextAction": "24ac4630-4ec5-4f3a-9110-88b8d3334492",
+        "Errors": [
+          {
+            "NextAction": "36daf108-0170-433f-9510-2fea6d38e625",
+            "ErrorType": "NoMatchingError"
+          }
+        ]
+      }
+    }
+  ]
+}
