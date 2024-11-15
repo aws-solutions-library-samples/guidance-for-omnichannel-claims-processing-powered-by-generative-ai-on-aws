@@ -53,7 +53,7 @@ def getAPIInfo():
     for values in stackinfo:
         #print(values['ResourceType'],"-",values['LogicalResourceId'],"-",values['PhysicalResourceId'])
         if "AWS::ApiGateway::RestApi"==values['ResourceType']:
-            api_url=f"https://{values['PhysicalResourceId']}.execute-api.us-east-1.amazonaws.com/dev/lambda" 
+            api_url=f"https://{values['PhysicalResourceId']}.execute-api.{region_name}.amazonaws.com/dev/lambda" 
             print(api_url)
             return api_url
 
