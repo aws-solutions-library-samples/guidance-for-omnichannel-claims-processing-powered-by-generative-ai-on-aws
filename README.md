@@ -150,17 +150,7 @@ Before deploying the guidance code, ensure that the following required tools hav
 - [AWS IAM](https://aws.amazon.com/iam/)
 - [AWS CDK](https://docs.aws.amazon.com/cdk/v2/guide/getting_started.html)
 
-
 VPC Availability: Ensure that at least one additional VPC slot is available in your account, as the default limit is typically 5 VPCs per region.
-
-### Requesting Access to AWS Bedrock
-
-1. Log in to the AWS Management Console
-2. Search for "Bedrock" in the search bar
-3. Click "Get Started" on the Amazon Bedrock service page
-4. Click "Manage Model Access" in the popup
-5. Select "Amazon" from the list of available models
-6. Click "Request Model Access" at the bottom of the page
 
 ### Supported Regions
 
@@ -172,7 +162,19 @@ This Guidance uses AWS CDK. If you are using aws-cdk for the first time, please 
 
 ## Deployment Steps
 
-### 1. Set up and verify customer experience services 
+### 1. Requesting Access to AWS Bedrock
+
+1. Log in to the AWS Management Console
+2. Search for "Bedrock" in the search bar
+3. Click "Get Started" on the Amazon Bedrock service page
+4. Click "Manage Model Access" in the popup
+5. Select "Amazon" from the list of available models
+6. Request access to 
+   - Claude 3 models - Haiku 3, Claude v2  and Claude v2.1
+   - Amazon Titan Text Embeddings V2 
+7. Click "Request Model Access" at the bottom of the page
+
+### 2. Set up and verify customer experience services 
 
 If you have an existing Amazon Connect instance and wanted to use that instance, SKIP the instance creation step below and follow the steps to import the contact Flow (step 2). 
    
