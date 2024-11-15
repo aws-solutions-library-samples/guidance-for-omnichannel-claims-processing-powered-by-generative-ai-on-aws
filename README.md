@@ -344,7 +344,7 @@ Now that all the configuration steps are completed, you should be able to open t
 
 ## Upload supporting documents
   - Using the case id, you can upload the supporting documents via `GP-FSI-Claims-Processing-Upload-Documents` page of the streamlit app.
-  - You will be promoted to upload your DL and accident images.
+  - You will be promoted to upload your drivers license and accident images. For the drivers license, you can use the sample file named `DLRegular.png` kept under `source/Assets`. Once you select the file, remeber to click on the Upload button. Once you click the upload button, you will see a message saying `File Successfully Uploaded`
   - Once the images are uploaded, the document validation and image analysis will take place and the results will be updated to `GP-FSI-ClaimsProcessing-NewClaim` DynamoDB table by `gp-fsi-claimprocessing-docprocessor` Lambda. So if you see the results are not getting updated, check the Cloudwatch logs for this Lambda to identify if there are any issues.
  
 ## Adjudicate the claims
