@@ -166,13 +166,15 @@ This Guidance uses AWS CDK. If you are using aws-cdk for the first time, please 
 
 1. Log in to the AWS Management Console
 2. Search for "Bedrock" in the search bar
-3. Click "Get Started" on the Amazon Bedrock service page
-4. Click "Manage Model Access" in the popup
-5. Select "Amazon" from the list of available models
-6. Request access to 
+3. In the left navigation pane, under Bedrock configurations, choose Model access.
+4. On the Model access page, choose Enable specific models.
+5. Select the following models from the list: 
    - Claude 3 models - Haiku 3, Claude v2  and Claude v2.1
    - Amazon Titan Text Embeddings V2 
-7. Click "Request Model Access" at the bottom of the page
+6. Scroll down to the bottom of the screen, click Next
+7. Click "Submit" button. 
+
+You will see the model access request with an in progress status. Getting access to the model and that change to be reflected in the console can take several minutes.
 
 ### 2. Set up and verify customer experience services 
 
