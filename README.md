@@ -169,7 +169,7 @@ This Guidance uses AWS CDK. If you are using aws-cdk for the first time, please 
 3. In the left navigation pane, under Bedrock configurations, choose Model access.
 4. On the Model access page, choose Enable specific models.
 5. Select the following models from the list: 
-   - Claude 3 models - Haiku 3, Claude v2  and Claude v2.1
+   - Claude 3 models - Haiku 3 and Claude
    - Amazon Titan Text Embeddings V2 
 6. Scroll down to the bottom of the screen, click Next
 7. Click "Submit" button. 
