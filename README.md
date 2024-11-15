@@ -125,8 +125,9 @@ These deployment instructions are optimized to best work [AWS Cloudshell](https:
 
 Before deploying the guidance code, ensure that the following required tools have been installed in your IDE:
 
-- AWS Cloud Development Kit (CDK) >= 2.126.0
-- Python >= 3.9
+- [AWS Cloud Development Kit (CDK) >= 2.126.0](https://aws.amazon.com/cdk/)
+- [Python >= 3.9](https://www.python.org/downloads/release/python-390/)
+- [AWS CLI v2](https://aws.amazon.com/cli/)
 
 ### AWS account requirements
 
@@ -148,6 +149,10 @@ Before deploying the guidance code, ensure that the following required tools hav
 - [Amazon Pinpoint](https://aws.amazon.com/pinpoint/)
 - [AWS IAM](https://aws.amazon.com/iam/)
 - [AWS CDK](https://docs.aws.amazon.com/cdk/v2/guide/getting_started.html)
+
+
+VPC Availability: Ensure that at least one additional VPC slot is available in your account, as the default limit is typically 5 VPCs per region.
+Amazon Bedrock Model Setting: Verify your Bedrock model settings to ensure compatibility with the deployment.
 
 ### Requesting Access to AWS Bedrock
 
