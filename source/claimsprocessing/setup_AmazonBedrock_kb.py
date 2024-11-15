@@ -26,6 +26,21 @@ s3_prefix = "Knowledgebase/"
 
 region_name = "us-east-1"  # default region
 
+def  update_kb_FM(knowledgeBaseId): 
+    dynamodb = boto3.resource('dynamodb')
+    DDBtableFM=os.environ['DDBtableFM']
+    table = dynamodb.Table(DDBtableFM)
+    response = table.update_item(
+        Key={
+            'Active': "Y"
+        },
+        UpdateExpression="set knowledgeBaseId=:m",
+        ExpressionAttributeValues={
+            ':m': knowledgeBaseId
+        },
+        ReturnValues="UPDATED_NEW"
+        )
+
 try:
     s3_client.head_bucket(Bucket=bucket_name)
     print(f'Bucket {bucket_name} Exists')
@@ -99,6 +114,7 @@ def check_knowledge_base_exists(bedrock_client, kb_name):
         response = bedrock_client.list_knowledge_bases()
         for kb in response['knowledgeBaseSummaries']:
             if kb['name'] == kb_name:
+                update_kb_FM(kb['knowledgeBaseId'])
                 return True, kb['knowledgeBaseId']
     except Exception as e:
         print(f"Error checking for existing knowledge base: {str(e)}")
@@ -568,18 +584,6 @@ def main():
     knowledgeBaseId=ingestion (knowledgeBaseId,dataSourceId)
     print("Creating Knowledge base completed, note down the knowldge base id")
     print(knowledgeBaseId)
-    dynamodb = boto3.resource('dynamodb')
-    DDBtableFM=os.environ['DDBtableFM']
-    table = dynamodb.Table(DDBtableFM)
-    response = table.update_item(
-        Key={
-            'Active': "Y"
-        },
-        UpdateExpression="set knowledgeBaseId=:m",
-        ExpressionAttributeValues={
-            ':m': knowledgeBaseId
-        },
-        ReturnValues="UPDATED_NEW"
-        )
+    update_kb_FM(knowledgeBaseId)
     print("Updated Claims processing FM tables with knowldge base id")
 main()

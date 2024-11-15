@@ -71,7 +71,7 @@ def invokeFM(knowledgeBaseId,model_id,region_id,vehicledata,Combined_vehicle_ima
         print(response)
         metadata_response=response['ResponseMetadata']
         generated_text = response['output']['text']
-        response_body=generated_text.replace("$","\$")
+        response_body=generated_text.replace("$","$")
         print(response_body)
         return response_body
     else:
@@ -107,7 +107,7 @@ def combine_image_analysis(CaseNumber,Image_Combine_prompt,model_id):
     response = bedrock_client.invoke_model(body=json_prompt, modelId=model_id,
                                     accept="application/json", contentType="application/json")
     response_body = json.loads(response.get('body').read())
-    Combined_vehicle_image_analysis_output = response_body['content'][0]['text'].replace("$","\$")
+    Combined_vehicle_image_analysis_output = response_body['content'][0]['text'].replace("$","\\$")
     # returning the final string to the end user
     print(Combined_vehicle_image_analysis_output) 
     response = table.update_item(
@@ -231,7 +231,7 @@ def image_analysis(file_type,image_base64,model_id,Image_prompt,vehicledata):
     # getting the response from Claude3 and parsing it to return to the end user
     response_body = json.loads(response.get('body').read())
     # the final string returned to the end user
-    image_analysis_output = response_body['content'][0]['text'].replace("$","\$")
+    image_analysis_output = response_body['content'][0]['text'].replace("$","\\$")
     # returning the final string to the end user
     #print(image_llm_output) 
     return image_analysis_output

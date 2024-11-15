@@ -209,12 +209,12 @@ Refer the Code Walkthrough and Deployment video given below:
 
    1. In your IDE (example: AWS Cloudshell), use the terminal to clone the repository:
        ```
-       git clone https://github.com/aws-solutions-library-samples/sample_code_for_FSI_ClaimsProcessing_auto_workshop.git
+       git clone https://github.com/aws-solutions-library-samples/guidance-for-omnichannel-claims-processing-powered-by-generative-ai-on-aws.git
        ```
 
-   2. Navigate to the folder: sample_code_for_FSI_ClaimsProcessing_auto_workshop using
+   2. Navigate to the folder: guidance-for-omnichannel-claims-processing-powered-by-generative-ai-on-aws using
        ```
-       cd sample_code_for_FSI_ClaimsProcessing_auto_workshop
+       cd guidance-for-omnichannel-claims-processing-powered-by-generative-ai-on-aws
        ```
    3. Make changes to the default values given.
 
@@ -325,7 +325,7 @@ Now that all the configuration steps are completed, you should be able to open t
 
   1. Go to CloudFormation stacks, open `StreamlitURL` given in the `Outputs` tab of `ClaimsProcessingStack3`.
   2. In the 'Initiate a new claim', you can enter your policy number (eg: PY1234)
-  3. If you have Amazon Pinpoint configured to send messages to your number, you will recieve the one time password (OTP) and final notification. If you dont have pinpoint configured, for getting the OTP, you can check the items in the DynamoDB table named `GP-FSI-ClaimsProcessing-NewClaim` to find the 6 digit number after the sample policy number PY1234 as your OTP. This is a workaround for testing with out Amazon Pinpoint configured for OTP.
+  3. If you have Amazon Pinpoint configured to send messages to your number, you will recieve the one time password (OTP) and final notification. If you dont have pinpoint configured, for getting the OTP, you can check the items in the DynamoDB table named `GP-FSI-ClaimsProcessing-NewClaim` to find the 6 digit number after the sample policy number PY1234 as your OTP. This is a workaround for testing with out Amazon Pinpoint configured for OTP. You can use the sample OTP 123456. This is a workaround for testing with out Amazon Pinpoint configured for OTP. 
   4. Enter the OTP and once verified, you will be given option to enter the details of the incident.
   5. Once you have the details filled, **click** the `Submit` button and a case will be opened. Make a note of the Case number (policy number+OTP). 
 
@@ -345,7 +345,7 @@ Now that all the configuration steps are completed, you should be able to open t
 ## Upload supporting documents
   - Using the case id, you can upload the supporting documents via `GP-FSI-Claims-Processing-Upload-Documents` page of the streamlit app.
   - You will be promoted to upload your DL and accident images.
-  - Once the images are uploaded, the documenta validation and image analysis will happen behind the scenes.
+  - Once the images are uploaded, the document validation and image analysis will take place and the results will be updated to `GP-FSI-ClaimsProcessing-NewClaim` DynamoDB table by `gp-fsi-claimprocessing-docprocessor` Lambda. So if you see the results are not getting updated, check the Cloudwatch logs for this Lambda to identify if there are any issues.
  
 ## Adjudicate the claims
   -   For Agents to validate the supporting documents and adjudicate, use the `GP-FSI-Claims-Processing-XperienceCenter` page of the streamlit app.
