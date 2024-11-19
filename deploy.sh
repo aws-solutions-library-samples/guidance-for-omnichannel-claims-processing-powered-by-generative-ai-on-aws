@@ -18,10 +18,8 @@ export DDBtableNewClaim="GP-FSI-ClaimsProcessing-NewClaim"
 export DDBtableFM="GP-FSI-ClaimsProcessing-FM"
 export DDBtableVehiclePricing="GP-FSI-ClaimsProcessing-VehiclePricing"
 export DDBtableCustomerInfo="GP-FSI-ClaimsProcessing-CustomerInfo"
-#export Pinpoint_app_id="bae18fab1da04cbd8f019b13376ef1ea" #dev account
-export Pinpoint_app_id="00d4d0f2aaab4e5782bba6c78d16b020" #AWSOMe builder account
-#export Pinpoint_origination_number="+18336641562" #dev account
-export Pinpoint_origination_number="+18337931782" #AWSOMe builder account
+export Pinpoint_app_id="xxxxxxxxxx" #change it
+export Pinpoint_origination_number="+1234567890" #change it
 #echo $DDBtableNewClaim
 #echo $DDBtableFM
 export BedrockKBID="" #Fill this if you already have a knowledge base
