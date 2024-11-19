@@ -39,7 +39,7 @@ class ClaimsProcessingStack1(Stack):
 
     def __init__(self, scope: Construct, construct_id: str, stack_variables: str = None,**kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
-        
+        self.template_options.description = "Guidance for Omnichannel Claims Processing Powered by Generative AI on AWS(SO9552)"
                    
         # Get the current account ID and region from the CDK context
         self.account_id = Stack.of(self).account
@@ -389,7 +389,7 @@ class ClaimsProcessingStack2(Stack):
 
     def __init__(self, scope: Construct, construct_id: str, ClaimsProcessingStack1, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
-        
+        self.template_options.description = "Guidance for Omnichannel Claims Processing Powered by Generative AI on AWS(SO9552)"
     
             
         '''Update the streamlit app'''
