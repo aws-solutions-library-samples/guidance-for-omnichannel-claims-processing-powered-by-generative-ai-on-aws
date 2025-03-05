@@ -61,26 +61,29 @@ The target partners/customers come from various sectors within the insurance ind
 
 ![Claims Processing on AWS Architecture](source/Assets/FSI_Claims_Processing_Architecture.png)
 
-The document presents an architecture that leverages various AWS services and generative AI capabilities to streamline the claims processing workflow, including:
+The above image represents an architecture that leverages various AWS services and generative AI capabilities to streamline the claims processing workflow, including:
 
 
-1. Initiates First Notice of Loss (FNOL) communication using Amazon Connect and Amazon Pinpoint for Call and SMS, Amazon Lex for Chat using a webpage hosted through Amazon CloudFront. Amazon Simple Storage Service (Amazon S3) stores claims document.
+1. Amazon CloudFront serves the Claims Processing React Web Application including Amazon Connect Chat interface. Amazon Cognito and AWS WAF protects Amazon CloudFront.
 
-2. Amazon CloudFront serves two web applications  - chatbot webpage hosted on Amazon S3 and claims processing webpage hosted on AWS Fargate. An Application Load Balancer load balances the traffic to Fargate. An AWS WAF protects Amazon CloudFront.
+2. Initiates First Notice of Loss (FNOL) communication via call, SMS & chat using Amazon Connect and Amazon Lex and webform using Claims Processing Web Application. 
 
-3. AWS Lambda function captures the data and stores them in an Amazon DynamoDB table. 
+3. Stores claims request details in an Amazon DynamoDB table. 
 
-4. AWS Lambda invokes Amazon Textract to analyze a driver’s license and invokes Amazon Bedrock using Anthropic Claude 3 Haiku LLM to analyze images of vehicle damages. Amazon AWS updates the generated insights including potential cost to replace and repair the coverable to existing claims record in the Amazon DynamoDB table.
+4. Claims documents uploaded via Claims Processing Web Application is stored in Amazon Simple Storage Service (Amazon S3). S3 events trigger an AWS Lambda which invokes Amazon Textract to analyze documents such as driver’s license and invokes Amazon Nova Pro LLM using Amazon Bedrock to analyze images of vehicle damages. AWS Lambda updates the generated insights including potential cost to replace and repair the coverable to existing claims record in the Amazon DynamoDB table.
 
-5. Adjuster leverages Amazon Bedrock Knowledgebase assistance to search information via Amazon API Gateway and AWS Lambda. Amazon S3 stores knowledge articles for the Bedrock knowledge base. An Amazon OpenSearch Serverless is used as the Vector database.
+5. API Gateway and AWS Lambda integrates 3rd party application data to Claims Processing Web Application.
 
-6. Adjuster reviews and adjudicates the claim request using the web application. 
+6. Adjuster leverages Amazon Bedrock Knowledgebase to search information via Amazon API Gateway and AWS Lambda. Amazon S3 stores knowledge articles for the Amazon Bedrock knowledge base. Amazon OpenSearch Serverless is used as the Vector database.
 
-7. Adjuster decision sends to Amazon Simple Queue Service (Amazon SQS) queue. 
+7. Adjuster reviews and adjudicates the claim request using the web application. 
 
-8. Amazon SQS help integrates with a claims system or a 3rd party application for further processing (3rd party integration is not scoped in this guidance).
+8. Adjuster decision is sent to Amazon Simple Queue Service (Amazon SQS) queue. 
 
-9. AWS Lambda notifies the claimant the status of the claim request via Amazon Pinpoint and/or Amazon Connect.
+9. AWS Lambda picks the messages from Amazon SQS and notifies the claimant the status of the claim request via Amazon Connect.
+
+10. AWS Lambda in a VPC picks the messages from Amazon SQS and updates 3rd party applications for further downstream processing (if required).
+
 
 
 ## Cost
@@ -92,19 +95,18 @@ The following table provides a sample cost breakdown for trying out this guidanc
 | Description | Service |  Cost [USD] | Configuration summary |
 |-------------|----------|--------------|-------------------------|
 |Customer Experience |Amazon Connect - SMS/Chat Cost|$0.72|Amazon Connect charges for 20 SMS (@0.01/SMS) and 100 chat messages(@0.040/message) with 2 TFN (@0.06/day)|
-|Customer Experience |Amazon Pinpoint|$0.32| Amazon Pinpoint SMS charges for  20 SMS (@0.0075/inbound) and 20 SMS outbound (@0.00847/outbound)|
-|Orchestration |AWS Lambda|$0.00| Free Tier ~ 5 API calls per claim and is covered as part of Free Tier.|
+|Orchestration, Integration |AWS Lambda|$0.00| Free Tier ~ 5 API calls per claim and is covered as part of Free Tier.|
+|Integration |Amazon API Gateway |$0.00| 1000 REST API requests/month|
 |AI/ML - Document extraction |Amazon Textract |$0.02| Extract and Analysis of 1 page (Driver's license) per claim @ $.02 per page|
 |Generative AI - Image Processing | Amazon Bedrock |$2.88| Anthropic Claude 3 Haiku model used for damage assessment & summarization of images. Key assumptions - 1 image per claim , image format jpeg , 1 Mega pixel , 1 MB. ~1500 input tokens and 2000 output tokens|
 |Generative AI - Knowledge assistance | Amazon Bedrock Knowledge bases (RAG)|$2.88| Amazon Claude Haiku model usage ~1500 input tokens and 2000 output tokens|
 |Generative AI - Knowledge assistance | Open Search Serverless Vector DB |$1.20|$0.24 per OCU per hour each for Indexing & searching.$0.24 for storage. Priced for 2 OCUs|
 |Notification and 3rd party integration | Amazon SQS |$0.00|Free Tier, ~ 20 messages and is covered under Free Tier|
-|Load Balancer  | Amazon ELB |$0.03| ~ cost for 1 hr of usage, processed bytes ~1.5 MB per day|
-|Webapplication hosting | AWS Fargate |$0.05| ~2vCPU , 2GB RAM for 1 hr usage|
-|Webapplication hosting | Amazon CloudFront |$0.00| Free Tier, Max of 10000 requests, and is covered under Free Tier|
 |Datastore |Amazon DynamoDB |$0.25| On-demand pricing with default settings. 1GB storage max with 1 KB average item size / 4 KB = 0.25 unrounded read request units needed per item.|
 |Datastore | Amazon S3 |$0.05| S3 Standard storage (2 GB per month @$0.022 per GB), GET, SELECT, and all other requests from S3 Standard (100), PUT, COPY, POST, LIST requests to S3 Standard (100).|
-|**Total** | - |$8.39|-|
+|Security |AWS Web Application Firewall |$6.00| 1 web ACL with 1 rules in it|
+|Security |Amazon Cognito |$0.00| 10,000 MAU is part of free Tier|
+|**Total** | - |$13.99|-|
 
 More than 100 AWS products are available on AWS Free Tier today. Click [here](https://aws.amazon.com/free/) to explore our offers.
 
@@ -113,11 +115,9 @@ More than 100 AWS products are available on AWS Free Tier today. Click [here](ht
 
 ## Prerequisites
 
-This prototype uses AWS Customer Experience Services, such as Amazon Lex, Amazon Connect and Amazon Pinpoint. You need administrative experience to set up customer engagement channels via those AWS services for this prototype to work. More details about setting up those services can be found under `Deployment Steps` section below.
+This prototype uses AWS Customer Experience Services, such as Amazon Lex and Amazon Connect. You need administrative experience to set up customer engagement channels via those AWS services for this prototype to work. More details about setting up those services can be found under `Deployment Steps` section below.
 
-This prototype leverages Amazon Connect Two-way SMS feature and it requires a phone number to be claimed in Amazon Pinpoint service. This requires [registration process](https://docs.aws.amazon.com/sms-voice/latest/userguide/registrations-create.html) and can take more than 15 days. So it is advised to test this solution in a non-production environment where you have a Pinpoint phone number approved to be used. Also, if your pinpoint enviornment is a [sandbox environment](https://docs.aws.amazon.com/sms-voice/latest/userguide/sandbox.html), the target customer number used in `claimsprocessing/loadsampledata.py` to load DDBtableCustomerInfo Dynamodb tables (line 52) need to be [verified](https://docs.aws.amazon.com/sms-voice/latest/userguide/verify-destination-phone-number.html). 
-
-To overcome the delay in the Pinpoint SMS nuber registration process, you can use an existing Pinpoint project and SMS phone number from a different AWS account. To enable cross account pinpont messaging, you can follow `Optional - Cross Account Pinpoint set up` under `Things to know` section below. Or you can follow the [blog](https://aws.amazon.com/blogs/messaging-and-targeting/how-to-implement-multi-tenancy-with-amazon-pinpoint/) or [workshop](https://github.com/aws-samples/multiple-accounts-multiple-amazon-pinpoint-projects) to set up the necessary settings to get the cross account services working.
+This prototype leverages Amazon Connect [Two-way SMS feature](https://docs.aws.amazon.com/sms-voice/latest/userguide/two-way-sms-phone-number.html) and it requires a phone number to be claimed in [AWS End User Messaging](https://aws.amazon.com/end-user-messaging/) service. This requires [registration process](https://docs.aws.amazon.com/sms-voice/latest/userguide/registrations-create.html) and can take more than 15 days. So it is advised to test this solution in a non-production environment where you have an SMS phone number approved to be used. If you have [End User messaging](https://aws.amazon.com/end-user-messaging/) and an SMS  configured to send messages to your number, you will recieve the OTP and final notification. If you dont have it configured or get an error message saying "Not able to send message", yo can use the sample OTP 999999 as temporory workaround for testing purpose. 
 
 ### Operating System
 
@@ -128,7 +128,10 @@ Before deploying the guidance code, ensure that the following required tools hav
 - [AWS Cloud Development Kit (CDK) >= 2.126.0](https://aws.amazon.com/cdk/)
 - [Python >= 3.9](https://www.python.org/downloads/release/python-390/)
 - [AWS CLI v2](https://aws.amazon.com/cli/)
-
+- To set up Amazon Bedrock Knoledgebase through CDK, we use `generative-ai-cdk-constructs`, a custom library (https://github.com/awslabs/generative-ai-cdk-constructs/blob/main/src/cdk-lib/bedrock/README.md) and it needs [Docker](https://docs.docker.com/engine/install/) to be running on your IDE. 
+- [Docker](https://docs.docker.com/get-started/get-docker/) installed
+   - Note: [buildx](https://github.com/docker/buildx) is also required. For Windows and macOS buildx is included in [Docker Desktop](https://docs.docker.com/desktop/)
+   
 ### AWS account requirements
 
 **Required resources:**
@@ -137,24 +140,26 @@ Before deploying the guidance code, ensure that the following required tools hav
    - Claude 3 models 
       - Haiku 3 for vehicle image analaysis - anthropic.claude-3-haiku-20240307-v1:0
       - Claude v2 (anthropic.claude-v2) and Claude v2.1 (anthropic.claude-v2:1) for Amazon Lex generative AI features
-   - Amazon Titan Text Embeddings V2 - amazon.titan-embed-text-v2:0 for Knowledge assistance embedding
+   - Amazon Models
+      - Titan Text Embeddings for Knowledge assistance source document embedding - amazon.titan-embed-text-v2:0 or amazon.titan-embed-text-v1 
+      - Amazon Nova Prod for vehicle image analaysis - amazon.nova-pro-v1:0 
 - [Amazon S3](https://aws.amazon.com/s3/)
-- [Amazon VPC](https://docs.aws.amazon.com/vpc/latest/userguide/what-is-amazon-vpc.html)
 - [AWS Lambda](https://aws.amazon.com/lambda/)
 - [Amazon DynamoDB](https://aws.amazon.com/dynamodb/)
 - [Amazon SQS](https://aws.amazon.com/sqs/)
 - [Amazon Textract](https://aws.amazon.com/textract/)
 - [Amazon Lex](https://aws.amazon.com/lex/)
 - [Amazon Connect](https://aws.amazon.com/lex/)
-- [Amazon Pinpoint](https://aws.amazon.com/pinpoint/)
+- [AWS End User Messaging](https://aws.amazon.com/end-user-messaging/)
+- [Amazon Cognito](https://aws.amazon.com/cognito/)
+- [AWS WAF](https://aws.amazon.com/waf/)
 - [AWS IAM](https://aws.amazon.com/iam/)
 - [AWS CDK](https://docs.aws.amazon.com/cdk/v2/guide/getting_started.html)
 
-VPC Availability: Ensure that at least one additional VPC slot is available in your account, as the default limit is typically 5 VPCs per region.
 
 ### Supported Regions
 
-The guidance package is well suited to be deployed in `us-west-2` and `us-east-1` regions. However you can verify the availability of services listed in the architecture above (specifcally Amazon Bedrock, Amazon Pinpoint, Amazon Connect and Amazon Lex) and opt a region where all those services are supported.
+The guidance package is well suited to be deployed in `us-west-2` and `us-east-1` regions. However you can verify the availability of services listed in the architecture above (specifcally Amazon Bedrock, AWS End User Messaging, Amazon Connect and Amazon Lex) and opt a region where all those services are supported.
 
 ### AWS CDK
 
@@ -162,7 +167,13 @@ This Guidance uses AWS CDK. If you are using aws-cdk for the first time, please 
 
 ## Deployment Steps
 
-### 1. Requesting Access to AWS Bedrock
+### 1. Clone the repository
+
+1. In your IDE, use the terminal to clone the repository:
+       ```
+       git clone https://github.com/aws-solutions-library-samples/guidance-for-omnichannel-claims-processing-powered-by-generative-ai-on-aws.git
+       ```
+### 2. Requesting Access to AWS Bedrock
 
 1. Log in to the AWS Management Console
 2. Search for "Bedrock" in the search bar
@@ -170,13 +181,14 @@ This Guidance uses AWS CDK. If you are using aws-cdk for the first time, please 
 4. On the Model access page, choose Enable specific models.
 5. Select the following models from the list: 
    - Claude 3 models - Haiku 3 and Claude
-   - Amazon Titan Text Embeddings V2 
+   - Amazon Titan Text Embeddings 
+   - Amazon Nova Pro
 6. Scroll down to the bottom of the screen, click Next
 7. Click "Submit" button. 
 
 You will see the model access request with an in progress status. Getting access to the model and that change to be reflected in the console can take several minutes.
 
-### 2. Set up and verify customer experience services 
+### 3. Set up and verify customer experience services 
 
 If you have an existing Amazon Connect instance and wanted to use that instance, SKIP the instance creation step below and follow the steps to import the contact Flow (step 2). 
    
@@ -191,33 +203,38 @@ If you have an existing Amazon Connect instance and wanted to use that instance,
       - 'Choose` the file (GP-FSI-ClaimsProcessing.json) to import 
       - Once we deploy the stack and have the Amazon Lex chatbot and AWS Lambda added to your connect instance, we will review and update any resolved or unresolved references as necessary prior we `Save and Publish` the flow (instructions given under `Amazon Connect Changes Contact Flow changes` of `Make updates based on CDK resources` section).
 
-If you have an existing Amazon Pinpoint Project and a phone number with two way SMS in Amazon Connect enabled, SKIP to CDK Deployment. To set up Amazon Pinpoint project and phone numer with Amazon Connect two way SMS enabled, follow the insutructions below:
+To set up a phone numer with Amazon Connect two way SMS enabled, follow the insutructions below:
 
-   3. [Create a new project using the Amazon Pinpoint console](https://docs.aws.amazon.com/pinpoint/latest/userguide/gettingstarted-create-project.html)
+   3. [Claim a phone number with two way SMS in Amazon Connect](https://docs.aws.amazon.com/connect/latest/adminguide/setup-sms-messaging.html)
 
-   4. [Claim a phone number with two way SMS in Amazon Connect](https://docs.aws.amazon.com/connect/latest/adminguide/setup-sms-messaging.html)
-
-   5. [Map the two-way phone number](https://docs.aws.amazon.com/connect/latest/adminguide/associate-claimed-ported-phone-number-to-flow.html) to the `GP-FSI-ClaimsProcessing` contact flow.
+   4. [Map the two-way phone number](https://docs.aws.amazon.com/connect/latest/adminguide/associate-claimed-ported-phone-number-to-flow.html) to the `GP-FSI-ClaimsProcessing` contact flow.
    
+   5. Set up Amazon Connect chat user interface in your react App (use the file `MainPage.tsx`)
+    - You can add Amazon Connect chat user interface to a webpage by configuring the communications widget in the Amazon Connect admin website as detailed [here](https://docs.aws.amazon.com/connect/latest/adminguide/add-chat-to-website.html). While configring the communications widget, in the Communications options section, choose `Chat` option for your customers to engage with your widget (you can ignore `Web calling`), and then choose Save and continue. 
+      - You can select the Contact Flow `GP-FSI-ClaimsProcessing` created earlier
+      - For the option to `Add security for your communications widget`, you can opt `No` 
+
+         Note: To add security for your chat communications widget to have more control when initiating new chats, including the ability to verify that chat requests sent to Amazon Connect are from authenticated users, you can follow [this documentation ](https://docs.aws.amazon.com/connect/latest/adminguide/add-chat-to-website.html#confirm-and-copy-chat-widget-script)
+      - COPY and Paste the `Communications widget script` into line 28-38 in the `MainPage.tsx` file kept under `source/ReactApp/src/pages` using your IDE
 
 ### 2. CDK deployment
 
-   1. In your IDE (example: AWS Cloudshell), use the terminal to clone the repository:
-       ```
-       git clone https://github.com/aws-solutions-library-samples/guidance-for-omnichannel-claims-processing-powered-by-generative-ai-on-aws.git
-       ```
 
-   2. Navigate to the folder: guidance-for-omnichannel-claims-processing-powered-by-generative-ai-on-aws using
+   1. Navigate to the folder: guidance-for-omnichannel-claims-processing-powered-by-generative-ai-on-aws using in yout IDE
        ```
        cd guidance-for-omnichannel-claims-processing-powered-by-generative-ai-on-aws
        ```
-   3. Make changes to the default values given.
+   2. Make changes to the default values given.
 
-      - The file named  `deploy.sh` takes care of CK set up, deploying CDK stacks and deploying other necessary resources. You can edit `deploy.sh` file to update values for Pinpoint_app_id [Pinpoint_app_id](https://docs.aws.amazon.com/pinpoint/latest/userguide/projects-manage.html) and Pinpoint_origination_number (Phone number claimed in Pinpoint) to have the SMS feature working. 
-      - The file named `loadsampledata.py` under `claimsprocessing` folder has some sample data that we loads to DynamoDB tables. Edit `loadsampledata.py` to enter a valid phone number instead of `+1234567890` in line 52 of `loadsampledata.py` which loads DDBtableCustomerInfo with the sample customer data. You can edit other default sample values as we if needed.
+      - The file named  `deploy.sh` takes care of deploying CDK stacks and deploying other necessary resources. You can edit this file to update the default/sample values provided:
+         - SMS_Origination_number_ARN - ARN of the SMS number claimed via [Amazon Connect with SMS feature enabled](https://docs.aws.amazon.com/connect/latest/adminguide/setup-sms-messaging.html#get-sms-number)
+         - CustomerPhone with a valid phone number to send/recieve SMS (eg: your cell number)   
+         - if you have wanted to integrate with [Socotra](https://www.socotra.com/) inusrance platform, then update these values
+            - SOCOTRA_ENDPOINT, SOCOTRA_HOST, SOCOTRA_USERNAME, SOCOTRA_PASSWORD
+            - SOCOTRA_External_PolicyHolderId1/2/3/4 with some some sample policy holder IDs
+         - If you have [Stripe](https://stripe.com/) payment processing integration to be enabled, updadate REACT_APP_STRIPE_PUBLISH_KEY with the Publishable API key
 
-
-   4. **Run** the file named `deploy.sh`
+   3. **Run** the file named `deploy.sh`
       ```
        sh deploy.sh
        ```
@@ -230,15 +247,9 @@ If you have an existing Amazon Pinpoint Project and a phone number with two way 
     
       **Note**:
 
-         Running `deploy.sh` file will deploy 4 stacks, `ClaimsProcessingStack1`, `ClaimsProcessingStack2`,  `ClaimsProcessingStack3`, `ClaimsProcessingStack4`. 
-         
-         The resources used in the Streamlit app get deployed by `ClaimsProcessingStack3` needs to be updated using the resorcues from `ClaimsProcessingStack1`. `ClaimsProcessingStack2` is used for the same.
+         Running `deploy.sh` file will deploy a stack named `ClaimsProcessingStack1`.
 
-         The deployment loads sample data to dynamodb tables created as part of this stack. File named `loadsampledata.py` is used for loading sample data to dynamodb tables. You can edit the sample dataset by editing `claimsprocessing/loadsampledata.py`. Please make sure to enter a valid phone number in line 52 of `loadsampledata.py` which loads DDBtableCustomerInfo with the sample customer data.
-
-         The file named `setup_AmazonBedrock_kb.py` under claimsprocessing folder is used for setting up a Bedrock knowldgebase and associated resources such as Open Serach vector database and collection, it's policies, running an embedding job to parse the sample data kept under Knowledgebase folder in the s3 bucket created as part of the Stack1. If you already have a knowledge base that you wanted to use, you can comment out line 53 and 54 of `deploy.sh` file.
-         
-         File named `LexImport.py` under `claimsprocessing/LexImport.py` is used for importing the sample bot, buidling it and makes sure the alias has the `gp-fsi-claimprocessing-filenewclaim` Lambda associated as the Lambda codehook.
+         File named `loadsamples.py` is used for loading sample data to dynamodb tables. You can edit the sample dataset by editing `claimsprocessing/loadsampledata.py`. Also, the same file is used for importing a sample Amazon Lex chatbot, buidling it and makeing sure the alias has the `gp-fsi-claimprocessing-filenewclaim` Lambda associated as the Lambda codehook.
 
          You can change the resource names by editing the enviornment variables set in the `deploy.sh` file.
       
@@ -249,8 +260,8 @@ If you have an existing Amazon Pinpoint Project and a phone number with two way 
     
    1. Verify a successful deployment of the CDK stack and CloudFormation stacks:
       - Open [CloudFormation](https://console.aws.amazon.com/cloudformation/home) console 
-      - Verify that the status of the stacks named `ClaimsProcessingStack1`, `ClaimsProcessingStack2`, `ClaimsProcessingStack3`, and `ClaimsProcessingStack4` is `CREATE_COMPLETE`
-      - For each stack, you can click on `resources` tab which shows all the resources created by the stack.
+      - Verify that the status of the stacks named `ClaimsProcessingStack1` is `CREATE_COMPLETE`
+      - You can click on `resources` tab of the stack which shows all the resources created by the stack.
 
    2. Check Amazon dynamodb tables and sample data:
       - Open the Amazon DynamoDB console
@@ -276,20 +287,26 @@ If you have an existing Amazon Pinpoint Project and a phone number with two way 
    1. Amazon Connect Changes Contact Flow changes
 
       - [Add the Amazon Lex bot created/imported to the Amazon Connect instance](https://docs.aws.amazon.com/connect/latest/adminguide/amazon-lex.html) 
-      - [Add the Amazon Lamda named](https://docs.aws.amazon.com/connect/latest/adminguide/connect-lambda-functions.html#add-lambda-function) `gp-fsi-claimprocessing-notification` created by the CDK stack to the Amazon Connect instance 
-      - Update Contact Flow imported: update `Get customer input` with the Lex details, `Invoke AWS Lambda function` with the lambda added, and select a `queue` and publish the flow
+      - Update Contact Flow imported: update `Get customer input` with the Lex details, and select a `queue` and publish the flow
 
-   2. A sample customer webpage for Amazon Connect Chat will be created by the Stack. We need to update the Connect chat info in the `home.html` file kept under S3 bucket and folder named `SampleConnectchatUI`
-      - You can add Amazon Connect chat user interface to a webpage by configuring the communications widget in the Amazon Connect admin website as detailed [here](https://docs.aws.amazon.com/connect/latest/adminguide/add-chat-to-website.html). While configring the communications widget, in the Communications options section, choose `Chat` option for your customers to engage with your widget (you can ignore `Web calling`), and then choose Save and continue. 
-      - You can select the Contact Flow `GP-FSI-ClaimsProcessing` created earlier
-      - For the option to `Add security for your communications widget`, you can opt `No` 
+   2. Allowlist the Amazon CloudFront URL in your Amazon Connect chat widget
+      - Get the `CloudFrontURL` from the output of `ClaimsProcessingStack1` stack (CloudFront URL)
+      - Add it as an approved domain to your Amazon Connect communication widget as instructed [here](https://docs.aws.amazon.com/connect/latest/adminguide/add-chat-to-website.html#chat-widget-domains)
 
-         Note: To add security for your chat communications widget to have more control when initiating new chats, including the ability to verify that chat requests sent to Amazon Connect are from authenticated users, you can follow [this documentation ](https://docs.aws.amazon.com/connect/latest/adminguide/add-chat-to-website.html#confirm-and-copy-chat-widget-script)
+   3. Use the sample Cognito User created or set up Cognito User
 
-      - COPY and Paste the `Communications widget script` into line 81-93 in the `home.html` page kept under `SampleConnectchatUI` of the S3 bucket (you can download the file, make changes and upload it back, make sure that the file name is matching)
-      - Also note that the `WebsiteURL` from the output of `ClaimsProcessingStack1` stack (CloudFront URL) needs to be added as an approved domain to your communication widget as instructed [here](https://docs.aws.amazon.com/connect/latest/adminguide/add-chat-to-website.html#chat-widget-domains)
+      #### Use the sample Cognito User created
+       - As part of the deployment, using `loadsamples.py` file, we create a sample coginot user with email "test@example.com" and temporary_password "Test@1234". - When you login to the Amazon CloudFront URL, you will be prompted to reset the password to a new one. 
 
-   3. Informational: A sample Amazon Lex will be created by the Stack using the file named `LexImport.py` under `claimsprocessing` folder. It will import a sample bot, buid it and creates an alias with `gp-fsi-claimprocessing-filenewclaim` Lambda associated for the Lambda codehook. The sample Amazon Lex `GP-FSI-ClaimsProcessing-sample.zip` shared as part of this guidance package is imported.
+      #### Set up Cognito User
+      - Go to the Amazon Cognito console . If prompted, enter your AWS credentials.
+      - Navigate to user pools on the left side of the panel. You should see a user pool created via CDK stack.
+      - Click on the pre-created user pool. You will land on the image shown below:
+      - Click on Users tab below Getting Started section and click on create user to create your user profile.
+      - Now, create a new user by providing username, valid email address and temporary password to login to the application.
+      - After this setup, you should be able to login and launch your application!
+
+   4. Informational: A sample Amazon Lex will be created by the Stack using the file named `loadsamples.py` under `claimsprocessing` folder. It will import a sample bot, buid it and creates an alias with `gp-fsi-claimprocessing-filenewclaim` Lambda associated for the Lambda codehook. The sample Amazon Lex `GP-FSI-ClaimsProcessing-sample.zip` shared as part of this guidance package is imported.
    
    If needed, you can manually import the sample Amazon Lex following [this](https://docs.aws.amazon.com/lex/latest/dg/export-to-lex.html) or given below :
       - Download `GP-FSI-ClaimsProcessing-sample.zip` given under the path `source/Amazon Lex` 
@@ -297,7 +314,7 @@ If you have an existing Amazon Pinpoint Project and a phone number with two way 
       - Select the bot and [build the bot](https://docs.aws.amazon.com/lexv2/latest/dg/building-bots.html) (Go to Versions -> All languages -> Language: English (US)), click `build` 
       - [Deploy the bot](https://docs.aws.amazon.com/lexv2/latest/dg/deploying.html) - create a version of the latest build and create an alias with the latest version of the bot 
 
-   4. An Amazon Bedrock Knowledgebase named `GP-FSI-ClaimsProcessing` will be created by the stack using the file `setup_AmazonBedrock_kb.py` under `claimsprocessing` folder. However, below given the instructions to create Amazon Bedrock Knowledgebase manually from AWS console if needed:
+   5. An Amazon Bedrock Knowledgebase named `GP-FSI-ClaimsProcessing` will be created by the stack and Amazon Bedrock knowledgebase sync job will be run by `loadsamples.py`. However, below given the instructions to create Amazon Bedrock Knowledgebase manually from AWS console if needed:
    
       - Navigate to Amazon Bedrock Knowledge base in AWS console 
       - Provide a knowledge base name.
@@ -311,18 +328,18 @@ If you have an existing Amazon Pinpoint Project and a phone number with two way 
 
 ### Via Webform 
 
-  1. Go to CloudFormation stacks, open `StreamlitURL` given in the `Outputs` tab of `ClaimsProcessingStack3`.
-  2. In the 'Initiate a new claim', you can enter your policy number (eg: PY1234)
-  3. If you have Amazon Pinpoint configured to send messages to your number, you will recieve the one time password (OTP) and final notification. If you dont have pinpoint configured, for getting the OTP, you can check the items in the DynamoDB table named `GP-FSI-ClaimsProcessing-NewClaim` to find the 6 digit number after the sample policy number PY1234 as your OTP. This is a workaround for testing with out Amazon Pinpoint configured for OTP. You can use the sample OTP 123456. This is a workaround for testing with out Amazon Pinpoint configured for OTP. 
-  4. Enter the OTP and once verified, you will be given option to enter the details of the incident.
-  5. Once you have the details filled, **click** the `Submit` button and a case will be opened. Make a note of the Case number (policy number+OTP). 
+  1. Go to CloudFormation stacks, open `CloudFrontURL` given in the `Outputs` tab of `ClaimsProcessingStack1`.
+  2. The URL will prompt you for the login and you can use the Amazon Congito user credentials set earlier
+  3. In the 'Initiate a new claim', you can enter your policy number (eg: PY1234)
+  4. If you have Amazon Connect SMS configured to send messages to your number, you will recieve the one time password (OTP) and final notification. If you dont have SMS feature configured, as a workaround, you can use the sample OTP 999999.
+  5. Enter the OTP and once verified, you will be given option to enter the details of the incident.
+  6. Once you have the details filled, **click** the `Submit` button and a case will be opened. Make a note of the Case number (policy number+OTP). 
 
 ### Via Chatbot
 
- 1. Go to CloudFormation stacks, open `WebsiteURL` given in the `Outputs` tab of `ClaimsProcessingStack1`.
- 2. Use the sample login name: `MariaG` and password `Test`. You can change the sample login and password hardcoded in line 28 of the `index.html` file kept under `AmazonConnect/SampleConnectChatUI` folder. Also, you can have your own authentication mechanisms added to this page as well.
- 3. Once authenticated, you will see a chatbot icon at the bottom right. As instructed in SetupCSTools section earlier, this webpage needs to be added an approved origin in the Amazon Connect Chat widget, have the chat widget is mapped to use 'GP-FSI-ClaimsProcessing' contact flow and have the  and the script from Amazon Connect chat widget is used in the `home.html`, the chat icon will get a contact initiated. 
- 4. While interacting with the chatbot, you will be prompted to enter the OTP for authentication. If you have Amazon Pinpoint configured to send messages to your number, you will recieve the one time password (OTP). If you dont have pinpoint configured, you can enter "999999" as an OTP. This is a workaround for testing with out Amazon Pinpoint configured for OTP.
+ 1. Go to CloudFormation stacks, open `CloudFrontURL` given in the `Outputs` tab of `ClaimsProcessingStack1`.
+ 2. Once authenticated, you will see a chatbot icon at the bottom right. 
+ 3. While interacting with the chatbot, you will be prompted to enter the OTP for authentication. If you have the SMS feature configured to send messages to your number, you will recieve the one time password (OTP). If you dont have it configured, you can enter "999999" as an OTP as a workaround.
  
  Note: To add security for your chat communications widget to have more control when initiating new chats, including the ability to verify that chat requests sent to Amazon Connect are from authenticated users, you can follow [this documentation ](https://docs.aws.amazon.com/connect/latest/adminguide/add-chat-to-website.html#confirm-and-copy-chat-widget-script).
 
@@ -331,17 +348,24 @@ If you have an existing Amazon Pinpoint Project and a phone number with two way 
 1. To the Amazon Connect two way SMS phone mapped to the `GP-FSI-ClaimsProcessing` contact flow, send a sample SMS (eg: Hi) and the two way SMS conversation will start.
 
 ## Upload supporting documents
-  - Using the case id, you can upload the supporting documents via `GP-FSI-Claims-Processing-Upload-Documents` page of the streamlit app.
+  - Using the case id, you can upload the supporting documents via `Upload Documents` page of the web app.
   - You will be promoted to upload your drivers license and accident images. For the drivers license, you can use the sample file named `DLRegular.png` kept under `source/Assets`. Once you select the file, remeber to click on the Upload button. Once you click the upload button, you will see a message saying `File Successfully Uploaded`
   - Once the images are uploaded, the document validation and image analysis will take place and the results will be updated to `GP-FSI-ClaimsProcessing-NewClaim` DynamoDB table by `gp-fsi-claimprocessing-docprocessor` Lambda. So if you see the results are not getting updated, check the Cloudwatch logs for this Lambda to identify if there are any issues.
  
 ## Adjudicate the claims
-  -   For Agents to validate the supporting documents and adjudicate, use the `GP-FSI-Claims-Processing-XperienceCenter` page of the streamlit app.
-  -   In the left pane, agent can ask questions that is powered by Bedrock knowledge bases. For example, the can ask `What is the Average Collision Repair Cost?`
+  -   For Agents to validate the supporting documents and adjudicate, use the `Adjuster` page of the web app.
   -   In the main pane, agent can see all tickets and see the status and choose the tickets to review.
-  -   For those selected ticketsm, agents will get details around the Drivers linces validation and image analysis completed.
+  -   For those selected tickets, agents will get details around the Drivers linces validation and image analysis completed.
   -   Using those, agent can take a decision to approve/reject or ask for more details
-  -   Once agent click the submit button, the decison will be recorded in the `GP-FSI-ClaimsProcessing-NewClaim` tables and a message will be send to the customer (provided pinpoint is configured to send the SMS)
+  -   Once agent click the submit button, the decison will be recorded in the `GP-FSI-ClaimsProcessing-NewClaim` tables and a message will be send to the customer (provided SMS feature is configured)
+
+## GenAIAssistant
+- Using 'GenAIAssistant' page, adjuster can ask questions and get answers that is powered by Bedrock knowledge bases. For example, the can ask `What is the Average Collision Repair Cost?`
+- Adjuster will be able to select different LLM models
+
+## External Claims System Integration
+   - Using `External Claims System Integration` tab, adjuster can view policyholders information from 3rd Party Claims Systems such as Socotra, Guidewire, etc. 
+   - For the DEMO purpose, we have the API integration enabled for Socotra and Guideqire. This page wont work if you don't have the Claims system credentials updated as enviornment variables to `gp-fsi-claimsprocessing-3P-integration` Lambda function or provided correctly in the `deploy.sh` file.
 
 Note: To potentially achieve more accurate or tailored results, we encourage you to experiment with editing the prompts you provide to the model (edit the prompts given in `GP-FSI-ClaimsProcessing-FM` DynamoDB table). By modifying the prompts, you can often guide the model to generate outputs that are more closely aligned with your requirements.
 
@@ -398,137 +422,26 @@ By exploring these next steps, customers can tailor the Claims Processing applic
 
 ## Things to know
 
-- Please note that in this guidance package, Streamlit application was deployed in ECS fargate and servred to end users via Amazon Cloudfront distribution. Customer can opt their preferred web hosting/UI mechanisms than using Streamlit app.
+- Please note that in this guidance package, we used a sample react application servred to end users via Amazon Cloudfront distribution. Customer can opt their preferred web hosting/UI aproaches.
 
-- Additionally, for this PoC guidance package, DynamoDB was used to store the metadata. You have the option to choose other datastores as well
+- Additionally, for this PoC guidance package, DynamoDB was used to store the metadata. You have the option to choose other datastores as well.
 
-- This prototype expects a pinpoint project exists in your AWS account and have a phone number registrted for testing. If you have Pinpoint configured to send messages to your number, you will recieve the OTP and final notification. If you dont have pinpoint configured or get an error message saying "Not able to send message", you can open the DynamoDB table named GP-FSI-ClaimsProcessing-NewClaim to find the OTP as temporory workaround for testing purpose. The OTP is the number after the Policy Number (eg: 123456 in Case Number field PY1234-123456).
+- For 3rd party Claims integration, we used Guidewire and Socotra. You can leverage the similiar integration approach to other claims systems or 3rd party solutions. 
 
-### Optional - Cross Account Pinpoint set up
-
-To overcome the delay in the Pinpoint SMS nuber registration process, you can use an existing Pinpoint project and SMS phone number from a different AWS account. To enable cross account pinpont messaging, you can follow the instructions given below.
-
-#### In the AWS account where Pinpoint is setup
-
-1. If you create a new role, (eg: `cross_account_assume_role_claimsprocessing_pinpoint`), add an inline policy to the role as follows. If you are using the existing role, go to step 2 to set up cross account assume permission.
-   ```
-   {
-      "Version": "2012-10-17",
-      "Statement": [
-         {
-               "Action": [
-                  "mobiletargeting:GetSmsChannel",
-                  "mobiletargeting:SendMessages",
-                  "mobiletargeting:PhoneNumberValidate"
-               ],
-               "Resource": [
-                  "arn:aws:mobiletargeting:<region-name>:<pinpoint account name>:*"
-               ],
-               "Effect": "Allow"
-         },
-         {
-               "Action": [
-                  "logs:CreateLogStream",
-                  "logs:PutLogEvents",
-                  "logs:CreateLogGroup"
-               ],
-               "Resource": [
-                  "arn:aws:logs:<region-name>:<pinpoint account name>:*"
-               ],
-               "Effect": "Allow"
-         }
-      ]
-   }
-   ```
-
-2. Add the assume role permissions for the streamlit app role and notification Lambda execution role as follows:
-
-   ```
-   {
-   "Version": "2012-10-17",
-   "Statement": {
-      "Effect": "Allow",
-      "Action": "sts:AssumeRole",
-      "Resource": [
-      "arn:aws:iam::<Deployment account number>:role/<ClaimsProcessingStack3-AppExecuteRole*>",
-      "arn:aws:iam::<Deployment account number>:role/<ClaimsProcessingStack3-gpfsiclaimprocessingnotifica-*>",
-      ]
-   }
-   }
-   ```
-
-   - Replace `<ClaimsProcessingStack3-AppExecuteRole*>` with the `AppExecuteRole` created by `ClaimsProcessingStack3` cloudformation stack.
-   - Replace `<ClaimsProcessingStack3-gpfsiclaimprocessingnotifica-*>` with the `gp-fsi-claimprocessing-notification` Lambda ServiceRole created by `ClaimsProcessingStack3` cloudformation stack.
-
-#### In the AWS account where CDK stack is deployed
-
-   1. Edit the `AppExecuteRole` created by `ClaimsProcessingStack3` cloudformation stack to add the below inline policy:
-
-```
-{
-  "Version": "2012-10-17",
-  "Statement": {
-    "Effect": "Allow",
-    "Action": "sts:AssumeRole",
-    "Resource": [
-	"arn:aws:iam::<Pinpoint account number>:role/cross_account_assume_role_claimsprocessing_pinpoint"
-    ]
-  }
-}
-```
-   2. Edit the `gp-fsi-claimprocessing-notification` Lambda ServiceRole created by `ClaimsProcessingStack3` cloudformation stack to add the aove inline policy.
-
-   [Reference 1](https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies-cross-account-resource-access.html)
-   [Reference 2](https://docs.aws.amazon.com/IAM/latest/UserGuide/tutorial_cross-account-with-roles.html)
-
-#### Make code changes to Notification Lambda and Initiate Claim page of Streamlit App
-
-1. Below given a sample code of sending cross account pinpoint messages:
-
-```
-import boto3
-app_id="<Pinpoint project id>"
-origination_number="<Pinpoint Phone Number>"
-region_name="<region-name>"
-CustomerPhone="+11234567890"
-message = "Please enter this 1234 OTP code to verify your identity"
-message_type = "TRANSACTIONAL"
-Pinpoint_Account="<Pinpoint Account>"
-
-sts = boto3.client('sts')
-response = sts.assume_role(
-    RoleArn=f'arn:aws:iam::{Pinpoint_Account}:role/cross_account_assume_role_claimsprocessing_pinpoint',
-    RoleSessionName='cross_account_pinpoint_session1',
-    DurationSeconds=900 # how many seconds these credentials will work
-)
-print(response)
-
-pinpoint_client=boto3.client(
-    'pinpoint',
-    aws_access_key_id=response['Credentials']['AccessKeyId'],
-    aws_secret_access_key=response['Credentials']['SecretAccessKey'],
-    aws_session_token=response['Credentials']['SessionToken']
-    ,region_name=region_name
-)
-
-response = pinpoint_client.send_messages(
-            ApplicationId=app_id,
-            MessageRequest={
-                'Addresses': {CustomerPhone: {'ChannelType': 'SMS'}},
-                'MessageConfiguration': {
-                    'SMSMessage': {
-                        'Body': message,
-                        'MessageType': message_type,
-                        'OriginationNumber': origination_number}}})
-print(response)
-
-
-```
-2. Using the above sample code make changes to Streamlit app page `GP-FSI-Claims-Processing-Initiate-Claim_org` under `Source/claimsprocessing` folder (which in turn will change `GP-FSI-Claims-Processing-Initiate-Claim.py` during the deployment) and AWS lambda code `gp-fsi-claimprocessing-customernotification.py` under `Source/lambda/gp-fsi-claimprocessing-customernotification` folder
+- This prototype expects an SMS phone number registrted for testing. If you have [End User messaging](https://aws.amazon.com/end-user-messaging/) and an SMS  configured to send messages to your number, you will recieve the OTP and final notification. If you dont have it configured or get an error message saying "Not able to send message", yo can use the sample OTP 999999 as temporory workaround for testing purpose. 
 
 ## Revisions
 
 All notable changes to the version of this guidance package will be documented and shared accordingly.
+
+1. Nov 19, 2024 - Initial version of the guidance package
+2. Feb 24, 2025 - Version 2 with the following changes:
+   - UI changed from Streamlit to React
+   - Changed the LLM model to Amazon Nova pro
+   - Integration with [Stripe](https://stripe.com/)
+   - Integration with [Guidewire](https://www.guidewire.com/)
+   - Integration with [Socotra](https://www.socotra.com/)
+   - Changed Amazon Pinpoint SMS to AWS End User Messaging SMS feature
 
 ## Notices
 
@@ -541,6 +454,8 @@ Before deploying the provided code in a production scenario or use case, it is t
 The sample insurance company webpage for the chatbot interface uses a hard coded user name and password. You can modify the chatbot webui application to use your preferred authentication mechanisms. To add security for your Amazon Connect chat communications widget to have more control when initiating new chats, follow [this documentation](https://docs.aws.amazon.com/connect/latest/adminguide/add-chat-to-website.html#confirm-and-copy-chat-widget-script). For the Claimsprocessing webpage built using Streamlit (hosted on AWS Fargate and served via Amazon CloudFront), you can add Amazon Congnito for additional authentication and authorization by referrencing [this](https://github.com/aws-samples/deploy-streamlit-app). For the Cloudfront web pages, you can enable [AWS WAF for added security](https://docs.aws.amazon.com/waf/latest/developerguide/cloudfront-features.html).
 
 By modifying the generative AI prompt sample we have shared in this guidance, you can often guide the model to generate outputs that are more closely aligned with your requirements. You are responsible for testing, securing, and optimizing the usage of generative AI as appropriate for production grade use based on your specific quality control practices and standards.
+
+Integrations to 3rd party systems is to show the art of possible. You can change the integration logic as you prefer.
 
 ## License
 This library is licensed under the MIT-0 License. See the LICENSE file.

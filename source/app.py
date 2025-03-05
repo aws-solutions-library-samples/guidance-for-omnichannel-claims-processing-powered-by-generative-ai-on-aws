@@ -3,39 +3,40 @@ import aws_cdk as cdk
 import boto3
 
 from claimsprocessing.claimsprocessing import ClaimsProcessingStack1
-from claimsprocessing.claimsprocessing import ClaimsProcessingStack2
-from claimsprocessing.claimsprocessing import ClaimsProcessingStack3
-from claimsprocessing.claimsprocessing import ClaimsProcessingStack4
+#from claimsprocessing.claimsprocessing import ClaimsProcessingStack2
+
 
 stack_variables={}
 stack_variables['DDBtableNewClaim']=os.getenv("DDBtableNewClaim"),
 stack_variables['DDBtableFM']=os.getenv("DDBtableFM"),
 stack_variables['DDBtableVehiclePricing']=os.getenv("DDBtableVehiclePricing"),
 stack_variables['DDBtableCustomerInfo']=os.getenv("DDBtableCustomerInfo"),
-stack_variables['Pinpoint_app_id']=os.getenv("Pinpoint_app_id"), 
-stack_variables['Pinpoint_origination_number']=os.getenv("Pinpoint_origination_number")
+stack_variables['SMS_Origination_number_ARN']=os.getenv("SMS_Origination_number_ARN")
 #print(os.getenv("BedrockKBID"))
 stack_variables['BedrockKBID']=os.getenv("BedrockKBID")
 stack_variables['bucketname_input']=os.getenv("bucketname_input")
+stack_variables['reactpath']=os.getenv("reactpath")
+stack_variables['SOCOTRA_ENDPOINT']=os.getenv("SOCOTRA_ENDPOINT")
+stack_variables['SOCOTRA_HOST']=os.getenv("SOCOTRA_HOST")
+stack_variables['SOCOTRA_USERNAME']=os.getenv("SOCOTRA_USERNAME")
+stack_variables['SOCOTRA_PASSWORD']=os.getenv("SOCOTRA_PASSWORD")
+stack_variables['execution']=os.getenv("execution")
+stack_variables['GW_USERNAME']=os.getenv("GW_USERNAME")
+stack_variables['GW_PASSWORD']=os.getenv("GW_PASSWORD")
+stack_variables['GW_BASE_URL']=os.getenv("GW_BASE_URL")
 
 
 app = cdk.App()
+
 
 ClaimsProcessingStack1=ClaimsProcessingStack1(app, "ClaimsProcessingStack1",
     env=cdk.Environment(account=os.getenv('CDK_DEFAULT_ACCOUNT'), region=os.getenv('CDK_DEFAULT_REGION')),
     stack_variables=stack_variables
     )
+
+# ClaimsProcessingStack2=ClaimsProcessingStack2(app, "ClaimsProcessingStack2",
+#     ClaimsProcessingStack1=ClaimsProcessingStack1
+#     )
     
-ClaimsProcessingStack2=ClaimsProcessingStack2(app, "ClaimsProcessingStack2",
-    ClaimsProcessingStack1=ClaimsProcessingStack1
-    )
-    
-ClaimsProcessingStack3=ClaimsProcessingStack3(app, "ClaimsProcessingStack3",
-    ClaimsProcessingStack1=ClaimsProcessingStack1
-    )
-    
-ClaimsProcessingStack4=ClaimsProcessingStack4(app, "ClaimsProcessingStack4",
-    ClaimsProcessingStack1=ClaimsProcessingStack1
-    )
-    
+
 app.synth()

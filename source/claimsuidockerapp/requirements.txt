@@ -1,4 +1,0 @@
-streamlit
-s3fs
-boto3
-requests

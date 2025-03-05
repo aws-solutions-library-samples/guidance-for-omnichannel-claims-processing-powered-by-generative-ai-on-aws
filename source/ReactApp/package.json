@@ -1,0 +1,57 @@
+{
+  "name": "claims-processing-app",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "@aws-amplify/auth": "^6.10.0",
+    "@aws-amplify/ui-react": "^6.9.0",
+    "@aws-sdk/client-dynamodb": "^3.731.1",
+    "@aws-sdk/client-s3": "^3.731.1",
+    "@aws-sdk/client-sqs": "^3.738.0",
+    "@aws-sdk/client-ssm": "^3.730.0",
+    "@aws-sdk/lib-dynamodb": "^3.731.1",
+    "@aws-sdk/s3-request-presigner": "^3.731.1",
+    "@cloudscape-design/components": "^3.0.872",
+    "@cloudscape-design/global-styles": "^1.0.34",
+    "@types/node": "^16.0.0",
+    "@types/react": "^18.0.0",
+    "@types/react-dom": "^18.0.0",
+    "aws-amplify": "^6.12.1",
+    "aws-sdk": "^2.1692.0",
+    "axios": "^1.7.9",
+    "cors": "^2.8.5",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^7.1.3",
+    "react-scripts": "5.0.1",
+    "typescript": "^4.9.0"
+  },
+  "scripts": {
+    "build": "react-scripts build",
+    "start": "react-scripts start",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "devDependencies": {
+    "ajv-keywords": "^5.1.0",
+    "schema-utils": "^4.3.0"
+  }
+}

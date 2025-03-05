@@ -25,10 +25,16 @@ import os
 
 numb=round(random()*100000)
 
+os.environ['AWS_DEFAULT_REGION'] = 'us-east-1'
+
+
 bedrock_agent_client = boto3.client('bedrock-agent-runtime')
 
-DDB_table_FM= os.environ["DDB_table_FM"]
+#DDB_table_FM= os.environ["DDB_table_FM"]
+DDB_table_FM= "GP-FSI-ClaimsProcessing-FM"
 dynamodb = boto3.resource('dynamodb')
+
+txt = "What is the Average Collision Repair cost"
 
 
 def invokeFM(knowledgeBaseId,model_id,region_id,prompt):
@@ -50,10 +56,10 @@ def invokeFM(knowledgeBaseId,model_id,region_id,prompt):
     print(response_body)
     return response_body
 
-def getFMModel():
+def getFMModel(model_selected):
     table = dynamodb.Table(DDB_table_FM)
     response = table.get_item(
-        Key={'Active': 'Y'}
+        Key={'Active': model_selected}
         )
     FMModeldata=response['Item']
     print(FMModeldata)
@@ -63,18 +69,19 @@ def getFMModel():
     print(knowledgeBaseId, model_id, region_id)
     return knowledgeBaseId,model_id, region_id
 
+
 def lambda_handler(event, context):
+    print("starting")
     print(event)
-    body=event['body']
-    body=json.loads(body)
-    prompt=str(body['prompt'])
+    model_selected=event['model']
+    print(model_selected) 
+    prompt=event['query']
     print(prompt) 
-    
-    knowledgeBaseId,model_id, region_id=getFMModel()
+    knowledgeBaseId,model_id, region_id=getFMModel(model_selected)
     response_body=invokeFM(knowledgeBaseId,model_id,region_id,prompt)
-    
-        
+    print(response_body)
+
     return {
         'statusCode': 200,
-        'body': response_body
+        'data': {"body":response_body}
         }

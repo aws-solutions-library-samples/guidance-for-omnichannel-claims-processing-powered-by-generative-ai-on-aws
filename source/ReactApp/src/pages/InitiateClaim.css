@@ -1,0 +1,71 @@
+.form-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+  
+  .form-field {
+    margin-bottom: 20px;
+  }
+  
+  .button-container {
+    margin-top: 20px;
+    display: flex;
+    justify-content: flex-end;
+  }
+  
+
+  [data-variant="primary"] {
+    background-color: #0073bb;
+  }
+  
+  [data-variant="primary"]:hover {
+    background-color: #005d99;
+  }
+  
+  .alert-success {
+    margin-bottom: 20px;
+  }
+  
+  .textarea-field {
+    min-height: 100px;
+  }
+  
+
+  .form-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+  
+  .form-field {
+    margin-bottom: 20px;
+  }
+  
+  .button-container {
+    margin-top: 20px;
+    display: flex;
+    justify-content: flex-end;
+  }
+  
+  .alert-success {
+    margin-bottom: 20px;
+  }
+  
+  .textarea-field {
+    min-height: 100px;
+  }
+  
+  .customer-info {
+    background-color: #f2f8fd;
+    padding: 15px;
+    border-radius: 4px;
+    margin-bottom: 20px;
+  }
+  
+  .error-message {
+    color: #d13212;
+    margin-top: 5px;
+    font-size: 14px;
+  }
+  

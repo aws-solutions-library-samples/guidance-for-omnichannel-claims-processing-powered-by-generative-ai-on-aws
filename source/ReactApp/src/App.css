@@ -1,0 +1,25 @@
+.app-layout {
+  --header-height: 60px;
+  
+  .header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+  }
+
+  .content {
+    margin-top: var(--header-height);
+  }
+}
+
+
+[data-awsui-layout-type="awsui"] {
+  position: absolute;
+  top: 60px; // match your header height
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+

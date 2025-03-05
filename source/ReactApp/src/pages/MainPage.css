@@ -1,0 +1,32 @@
+.custom-dashboard {
+  padding: 20px;
+}
+
+.policy-container {
+  background-color: #f8f8f8;
+  border-radius: 8px;
+  padding: 20px;
+}
+
+.policy-details {
+  margin-top: 20px;
+}
+
+.amount-text {
+  color: #0073bb;
+  font-weight: bold;
+}
+
+.claims-table {
+  margin-top: 20px;
+}
+
+.welcome-header {
+  margin-bottom: 20px;
+}
+
+.header-text {
+  color: #FFFFFF;
+  font-size: 1.5rem;
+  font-weight: 500;
+}

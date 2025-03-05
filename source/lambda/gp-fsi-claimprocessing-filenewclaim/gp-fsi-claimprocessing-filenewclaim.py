@@ -22,10 +22,8 @@ import json
 from botocore.exceptions import ClientError
 from boto3.dynamodb.conditions import Key
 import logging
-import base64
-import botocore
 import os
-import io
+
 
 logger = logging.getLogger()
 
@@ -36,28 +34,69 @@ pinpoint_client=boto3.client('pinpoint')
 
 DDB_table_NewClaim = os.environ["DDB_table_NewClaim"]
 DDB_table_CustomerInfo= os.environ["DDB_table_CustomerInfo"]
-Pinpoint_app_id= os.environ["Pinpoint_app_id"]
-Pinpoint_origination_number= os.environ["Pinpoint_origination_number"]
 User_Upload_URL = os.environ["CloudFront_URL"]+"/GP-FSI-Claims-Processing-Upload-Documents"
+SQS_3P_QUEUE_URL=os.environ["SQS_3P_QUEUE_URL"]
+CUSTOMER_SQS_QUEUE_URL=os.environ["CUSTOMER_SQS_QUEUE_URL"]
 
 vehicles = []
-def customer_message(CustomerPhone,message):
-    app_id = Pinpoint_app_id
-    origination_number =Pinpoint_origination_number
-    message_type = "TRANSACTIONAL"
+
+
+def send_sqs_message(claim_details):
     try:
-        response = pinpoint_client.send_messages(
-            ApplicationId=app_id,
-            MessageRequest={
-                'Addresses': {CustomerPhone: {'ChannelType': 'SMS'}},
-                'MessageConfiguration': {
-                    'SMSMessage': {
-                        'Body': message,
-                        'MessageType': message_type,
-                        'OriginationNumber': origination_number}}})
-        print(response)
-    except :
-        print("Not able to send the message")
+        # Initialize SQS client for 3rd party Integration
+        sqs_client = boto3.client('sqs')
+    
+        
+        # Prepare the message
+        message_params = {
+            'QueueUrl': SQS_3P_QUEUE_URL,
+            'MessageBody': json.dumps(claim_details),
+            'MessageAttributes': {
+                'MessageType': {
+                    'DataType': 'String',
+                    'StringValue': 'NewClaim'
+                }
+            }
+        }
+        
+        # Send message to SQS
+        response = sqs_client.send_message(**message_params)
+        
+        logger.info(f"Successfully sent message to SQS. MessageId: {response['MessageId']}")
+        return response
+        
+    except ClientError as e:
+        logger.error(f"Error sending message to SQS: {str(e)}")
+        raise
+    except Exception as e:
+        logger.error(f"Unexpected error sending message to SQS: {str(e)}")
+        raise
+
+def  customer_notification(CustomerPhone,Message,CaseNumber):
+    try:
+        # Initialize SQS client for 3rd party Integration
+        sqs_client = boto3.client('sqs')
+        body={"CustomerPhone":CustomerPhone,"Message":Message,"CaseNumber":CaseNumber}
+        print(body)
+        # Prepare the message
+        message_params = {
+            'QueueUrl': CUSTOMER_SQS_QUEUE_URL,
+            'MessageBody': json.dumps(body)
+        }
+        
+        # Send message to SQS
+        response = sqs_client.send_message(**message_params)
+        
+        logger.info(f"Successfully sent message to SQS. MessageId: {response['MessageId']}")
+        return response
+        
+    except ClientError as e:
+        logger.error(f"Error sending message to SQS: {str(e)}")
+        raise
+    except Exception as e:
+        logger.error(f"Unexpected error sending message to SQS: {str(e)}")
+        raise
+
 
 def close(sessionAttributes, intent, dialogAction, Message):
     response = {}
@@ -91,6 +130,7 @@ def generic_slot_elicit(intent_request,intent_name,sessionAttributes,slotToElici
 def verifycustomer_fullfilled(sessionAttributes,intent_name):
     CaseNumber=sessionAttributes['Policy_VIN']+"-"+str(sessionAttributes['OTP'])
     CustomerPhone=sessionAttributes['CustomerPhone']
+    sessionAttributes['PolicyNumber']=sessionAttributes['Policy_VIN']
     sessionAttributes['CaseNumber']=CaseNumber
     sessionAttributes['Submission']="Chat"
     sessionAttributes['VehiclceAnalysis']={}
@@ -100,8 +140,10 @@ def verifycustomer_fullfilled(sessionAttributes,intent_name):
     sessionAttributes=sessionAttributes
     print(sessionAttributes)
     write_to_ddb (sessionAttributes)
-    Message= "Upload  supporting documents to "+User_Upload_URL+", use Case number "+CaseNumber+" to validate"
-    #customer_message(CustomerPhone,Message)
+    #Send message to 3rd party SQS queue for integration with 3rd party
+    send_sqs_message(sessionAttributes)
+    Message= "Upload supporting documents to "+User_Upload_URL+", use Case number "+CaseNumber+" to validate"
+    customer_notification(CustomerPhone,Message,CaseNumber)
     print("Case opened - "+str(CaseNumber))
     print("Sending final message")
     sessionAttributes['VehiclceAnalysis']="Sample"
@@ -144,50 +186,91 @@ def claimticket_Check(intent_request,intent_name,sessionAttributes):
     
 def match_vehicle(user_input, vehicles):
     user_input_lower = user_input.lower()
-    match_count=0
-    matched_vehicle=""
-    for vehicle in vehicles:
-        print(vehicle)
-        if user_input_lower in vehicle.lower():
-            print("Found a Found a match: {vehicle}")
-            matched_vehicle=vehicle
-            match_count=match_count+1
+    match_count = 0
+    matched_vehicle = ""
     
-    print(matched_vehicle)
-    print(match_count)
-    return match_count,matched_vehicle
+    # Debug print
+    print(f"Searching for: {user_input_lower}")
+    print(f"Available vehicles: {vehicles}")
+    unique_vehicles = list(set(vehicles))
+
+    for vehicle in unique_vehicles:
+        vehicle_lower = vehicle.lower()
+        print(f"Checking vehicle: {vehicle}")
+        
+        # Check if the input exactly matches or is a substring of the vehicle name
+        if user_input_lower == vehicle_lower or user_input_lower in vehicle_lower:
+            print(f"Found a match: {vehicle}")
+            matched_vehicle = vehicle
+            match_count += 1
+    
+    print(f"Final matched vehicle: {matched_vehicle}")
+    print(f"Total matches found: {match_count}")
+    return match_count, matched_vehicle
 
 
-def CarMake_Model_Check(intent_request,intent_name,sessionAttributes,vehicles):
-    sessionAttributes['CarMake_Model']=intent_request['inputTranscript']
-
-    user_input = intent_request['sessionState']['intent']['slots']['CarMake_Model']['value']['originalValue'] 
-
-    sessionAttributes['CarMake_Model'] = user_input
-
-
-    # Match the vehicle
-    match_count,matched_vehicle = match_vehicle(user_input, vehicles)
-    print(matched_vehicle)
-    if match_count==1:
-        # Exact match found
-        sessionAttributes['CarMake_Model'] = matched_vehicle
-        intent_name=intent_name 
-        slotToElicit="LossDate"
-        Message="What is the Date and time of the Incident"
-        dialogAction={"type": "ElicitSlot","intentName":intent_name,"slotToElicit": slotToElicit}
-        intent={"name":intent_name}
-        sessionAttributes=sessionAttributes
-    else:        
-        sessionAttributes['CarMake_Model'] = "Not Matching"
-        intent_name=intent_name 
-        slotToElicit="CarMake_Model"
-        Message="Please be specific about the vehicle info as we are not able to match or found more than one vehicle with your input"
-        dialogAction={"type": "ElicitSlot","intentName":intent_name,"slotToElicit": slotToElicit}
-        intent={"name":intent_name}
-        sessionAttributes=sessionAttributes
-
-    return close(sessionAttributes, intent, dialogAction, Message)  
+def CarMake_Model_Check(intent_request, intent_name, sessionAttributes, vehicles):
+    try:
+        # Get the user input
+        user_input = intent_request['sessionState']['intent']['slots']['CarMake_Model']['value']['originalValue']
+        sessionAttributes['CarMake_Model'] = user_input
+        
+        # Match the vehicle
+        match_count, matched_vehicle = match_vehicle(user_input, vehicles)
+        
+        if match_count == 1:
+            # Exact match found
+            sessionAttributes['CarMake_Model'] = matched_vehicle
+            return close(
+                sessionAttributes,
+                {"name": intent_name},
+                {
+                    "type": "ElicitSlot",
+                    "intentName": intent_name,
+                    "slotToElicit": "LossDate"
+                },
+                "What is the Date and time of the Incident"
+            )
+        elif match_count > 1:
+            # Multiple matches found
+            return close(
+                sessionAttributes,
+                {"name": intent_name},
+                {
+                    "type": "ElicitSlot",
+                    "intentName": intent_name,
+                    "slotToElicit": "CarMake_Model"
+                },
+                "Multiple vehicles matched. Please be more specific with the vehicle information."
+            )
+        else:
+            # No matches found
+            sessionAttributes['CarMake_Model'] = "Not Matching"
+            return close(
+                sessionAttributes,
+                {"name": intent_name},
+                {
+                    "type": "ElicitSlot",
+                    "intentName": intent_name,
+                    "slotToElicit": "CarMake_Model"
+                },
+                "Could not find a matching vehicle. Please provide the exact vehicle make and model."
+            )
+            
+    except Exception as e:
+        print(f"Error in CarMake_Model_Check: {str(e)}")
+        # Return a generic error response
+        return close(
+            sessionAttributes,
+            {"name": intent_name},
+            {
+                "type": "ElicitSlot",
+                "intentName": intent_name,
+                "slotToElicit": "CarMake_Model"
+            },
+            "There was an error processing your request. Please try again with the vehicle information."
+        )
+ 
 
 def OTP_Check(intent_request,intent_name,sessionAttributes):
     OTP_Entered = intent_request['sessionState']['intent']['slots']['OTP']['value']['interpretedValue']
@@ -220,10 +303,11 @@ def CommPref(intent_request,intent_name,sessionAttributes):
     sessionAttributes=intent_request['sessionState']['sessionAttributes']
     CustomerPhone=sessionAttributes['CustomerPhone']
     print(CustomerPhone)
-    message=random.randint(100000, 999999)
-    sessionAttributes['OTP']=message
-    message = "Please enter this "+ str(message) +" OTP code to verify your identity"
-    customer_message(CustomerPhone,message)
+    otp_num=random.randint(100000, 999999)
+    sessionAttributes['OTP']=otp_num
+    Message = "Please enter this "+ str(otp_num) +" OTP code to verify your identity"
+    CaseNumber=sessionAttributes['Policy_VIN']+"-"+str(otp_num)
+    customer_notification(CustomerPhone,Message,CaseNumber)
     intent_name=intent_name 
     dialogAction={"type": "ElicitSlot","intentName":intent_name,"slotToElicit": "OTP"}
     intent={"name":intent_name}
@@ -250,6 +334,8 @@ def dynamodb_VerifyCustomer(intent_request,intent_name,sessionAttributes,Policy_
                 CustomerName = response['Item']['CustomerName']
                 CustomerEmail = response['Item']['CustomerEmail']
                 CustomerPhone = response['Item']['CustomerPhone']
+                External_Id = response['Item']['External_Id']
+                External_PolicyId = response['Item']['External_PolicyId']
                 Vehicles=response['Item']['Vehicles']
                 Vehicle_List=""
                 i=0
@@ -272,20 +358,27 @@ def dynamodb_VerifyCustomer(intent_request,intent_name,sessionAttributes,Policy_
                 sessionAttributes['CustomerEmail']=CustomerEmail
                 sessionAttributes['CustomerPhone']=CustomerPhone
                 sessionAttributes['VehicleMessage']=VehicleMessage
-
+                sessionAttributes['External_Id']=External_Id
+                sessionAttributes['External_PolicyId']=External_PolicyId
                 
                 return CommPref(intent_request,intent_name,sessionAttributes)
 
-        except:
+        except ClientError as e:
+            error_message = e.response['Error']['Message']
+            print(f"Error Message: {error_message}")
             VerifyCustomerMessage="Provided input is not matching the Policy/VIN in our records, please re-enter the Policy Number/VIN Number"
             print (VerifyCustomerMessage)
             slotToElicit="Policy_VIN"
             return generic_slot_elicit(intent_request,intent_name,sessionAttributes,slotToElicit,VerifyCustomerMessage)
-    except:
+    except ClientError as e:
+        error_message = e.response['Error']['Message']
+        print(f"Error Message: {error_message}")
         CustomerName = ""
         CustomerEmail = ""
         CustomerPhone = ""
         VehicleMessage= ""
+        External_Id= ""
+        External_PolicyId= ""
         VerifyCustomerMessage="There is some error, let me connect you to an agent"
         print (VerifyCustomerMessage)
         sessionAttributes['VerifyCustomerMessage']=VerifyCustomerMessage
@@ -293,7 +386,8 @@ def dynamodb_VerifyCustomer(intent_request,intent_name,sessionAttributes,Policy_
         sessionAttributes['CustomerEmail']=CustomerEmail
         sessionAttributes['CustomerPhone']=CustomerPhone
         sessionAttributes['VehicleMessage']=VehicleMessage
-
+        sessionAttributes['External_Id']=External_Id
+        sessionAttributes['External_PolicyId']=External_PolicyId
 
         dialogAction={"type": "Close","intentName":"Agent"}
         intent={"name":"Agent", "state": "Fulfilled" }

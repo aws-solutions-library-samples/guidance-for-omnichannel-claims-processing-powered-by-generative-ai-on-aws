@@ -22,6 +22,9 @@ from boto3.dynamodb.conditions import Key, Attr
 import base64
 import io
 from datetime import datetime
+from botocore.exceptions import ClientError
+import random
+import time
 
 dynamodb = boto3.resource('dynamodb')
 s3 = boto3.client('s3')
@@ -32,6 +35,26 @@ DDB_table_NewClaim = os.environ["DDB_table_NewClaim"]
 DDB_table_FM= os.environ["DDB_table_FM"]
 DDB_table_VehiclePricing= os.environ["DDB_table_VehiclePricing"]
 
+
+def exponential_backoff_retry(max_retries=5, initial_delay=1):
+    def decorator(func):
+        def wrapper(*args, **kwargs):
+            delay = initial_delay
+            for retry in range(max_retries):
+                try:
+                    return func(*args, **kwargs)
+                except ClientError as e:
+                    if e.response['Error']['Code'] == 'ThrottlingException':
+                        if retry == max_retries - 1:
+                            raise
+                        # Add jitter to prevent synchronized retries
+                        sleep_time = delay + random.uniform(0, 1)
+                        time.sleep(sleep_time)
+                        delay *= 10  # Exponential backoff
+                    else:
+                        raise
+        return wrapper
+    return decorator
 
 def llm_updateitem(CaseNumber,response_body):
     table = dynamodb.Table(DDB_table_NewClaim)
@@ -48,6 +71,7 @@ def llm_updateitem(CaseNumber,response_body):
     )
     return response
 
+@exponential_backoff_retry()
 def invokeFM(knowledgeBaseId,model_id,region_id,vehicledata,Combined_vehicle_image_analysis_output,Summary_prompt):
     model_arn='arn:aws:bedrock:'+region_id+'::foundation-model/'+model_id
     vehicledata=str(vehicledata)
@@ -78,6 +102,7 @@ def invokeFM(knowledgeBaseId,model_id,region_id,vehicledata,Combined_vehicle_ima
         print("knowledgeBaseId is empty. Cannot generate final summarization. Update the knowledge base id to be used in the Metadata table named GP-FSI-ClaimsProcessing-FM ")
         exit()
 
+@exponential_backoff_retry()
 def combine_image_analysis(CaseNumber,Image_Combine_prompt,model_id):
     table = dynamodb.Table(DDB_table_NewClaim)
     response = table.get_item(
@@ -86,28 +111,48 @@ def combine_image_analysis(CaseNumber,Image_Combine_prompt,model_id):
     #print(response)
     VehiclceAnalysis=response['Item']['VehiclceAnalysis']
     print(VehiclceAnalysis)
-    Image_Combine_prompt_input="These are the vehicle image results "+str(VehiclceAnalysis)+". "+Image_Combine_prompt
-    prompt = {
-        "anthropic_version": "bedrock-2023-05-31",
-        "max_tokens": 1000,
-        "temperature": 0.5,
-        "messages": [
+    # Image_Combine_prompt_input="These are the vehicle image results "+str(VehiclceAnalysis)+". "+Image_Combine_prompt
+    # prompt = {
+    #     "anthropic_version": "bedrock-2023-05-31",
+    #     "max_tokens": 1000,
+    #     "temperature": 0.5,
+    #     "messages": [
+    #         {
+    #             "role": "user",
+    #             "content": [
+    #                 {
+    #                     "type": "text",
+    #                     "text": Image_Combine_prompt_input
+    #                 }
+    #             ]
+    #         }
+    #     ]
+    # }
+    # json_prompt = json.dumps(prompt)
+    # response = bedrock_client.invoke_model(body=json_prompt, modelId=model_id,
+    #                                 accept="application/json", contentType="application/json")
+    # response_body = json.loads(response.get('body').read())
+    Image_Combine_prompt_input = "These are the vehicle image results "+str(VehiclceAnalysis)+". "+Image_Combine_prompt
+    print(Image_Combine_prompt_input)
+    request = {
+        'modelId': model_id,
+        'messages': [
             {
-                "role": "user",
-                "content": [
+                'role': 'user',
+                'content': [
                     {
-                        "type": "text",
-                        "text": Image_Combine_prompt_input
+                        'text': Image_Combine_prompt_input
                     }
                 ]
             }
         ]
     }
-    json_prompt = json.dumps(prompt)
-    response = bedrock_client.invoke_model(body=json_prompt, modelId=model_id,
-                                    accept="application/json", contentType="application/json")
-    response_body = json.loads(response.get('body').read())
-    Combined_vehicle_image_analysis_output = response_body['content'][0]['text'].replace("$","\\$")
+
+    response = bedrock_client.converse(**request)
+    Combined_vehicle_image_analysis_output = response['output']['message']['content'][0]['text']
+
+
+    #Combined_vehicle_image_analysis_output = response_body.replace("$","\\$")
     # returning the final string to the end user
     print(Combined_vehicle_image_analysis_output) 
     response = table.update_item(
@@ -198,42 +243,77 @@ def image_analysis_updateitem(CaseNumber,s3_object,image_analysis_output,FileNam
 
     return response
 
+@exponential_backoff_retry()
 def image_analysis(file_type,image_base64,model_id,Image_prompt,vehicledata):
     Image_prompt="Vehicle parts data is "+str(vehicledata)+"."+Image_prompt
-    prompt = {
-        "anthropic_version": "bedrock-2023-05-31",
-        "max_tokens": 1000,
-        "temperature": 0.5,
-        "system": Image_prompt,
-        "messages": [
+    image_bytes = base64.b64decode(image_base64)
+    # prompt = {
+    #     "anthropic_version": "bedrock-2023-05-31",
+    #     "max_tokens": 1000,
+    #     "temperature": 0.5,
+    #     "system": Image_prompt,
+    #     "messages": [
+    #         {
+    #             "role": "user",
+    #             "content": [
+    #                 {
+    #                     "type": "image",
+    #                     "source": {
+    #                         "type": "base64",
+    #                         "media_type": file_type,
+    #                         "data": image_base64
+    #                     }
+    #                 },
+    #                 {
+    #                     "type": "text",
+    #                     "text": Image_prompt
+    #                 }
+    #             ]
+    #         }
+    #     ]
+    # }
+    # json_prompt = json.dumps(prompt)
+    # response = bedrock_client.invoke_model(body=json_prompt, modelId=model_id,
+    #                                 accept="application/json", contentType="application/json")
+    # # getting the response from Claude3 and parsing it to return to the end user
+    # response_body = json.loads(response.get('body').read())
+    # # the final string returned to the end user
+    # image_analysis_output = response_body['content'][0]['text'].replace("$","\\$")
+    # # returning the final string to the end user
+    # #print(image_llm_output) 
+
+    # Construct the request using Converse API structure
+    print(model_id)
+    request = {
+        'modelId': model_id,
+        'messages': [
             {
-                "role": "user",
-                "content": [
+                'role': 'user',
+                'content': [
                     {
-                        "type": "image",
-                        "source": {
-                            "type": "base64",
-                            "media_type": file_type,
-                            "data": image_base64
+                        'image': {
+                            'format': file_type.split('/')[-1],  # Extract format from media_type
+                            'source': {
+                                'bytes': image_bytes
+                            }
                         }
                     },
                     {
-                        "type": "text",
-                        "text": Image_prompt
+                        'text': Image_prompt
                     }
                 ]
             }
         ]
     }
-    json_prompt = json.dumps(prompt)
-    response = bedrock_client.invoke_model(body=json_prompt, modelId=model_id,
-                                    accept="application/json", contentType="application/json")
-    # getting the response from Claude3 and parsing it to return to the end user
-    response_body = json.loads(response.get('body').read())
-    # the final string returned to the end user
-    image_analysis_output = response_body['content'][0]['text'].replace("$","\\$")
-    # returning the final string to the end user
-    #print(image_llm_output) 
+
+    # Make the API call using converse instead of invoke_model
+    response = bedrock_client.converse(**request)
+    print(response)
+    # Parse JSON
+    #data = json.loads(response)
+    # Extract text field
+    image_analysis_output = response['output']['message']['content'][0]['text']
+    print(image_analysis_output)
     return image_analysis_output
 
 
