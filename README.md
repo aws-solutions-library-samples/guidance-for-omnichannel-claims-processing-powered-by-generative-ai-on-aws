@@ -121,7 +121,7 @@ This prototype leverages Amazon Connect [Two-way SMS feature](https://docs.aws.a
 
 ### Operating System
 
-These deployment instructions are optimized to best work [AWS Cloudshell](https://aws.amazon.com/cloudshell/).   Deployment using another Integrated Development Environment (IDE) or local enviornment may require additional steps such as configuring [AWS Cloud Development Kit](https://docs.aws.amazon.com/cdk/v2/guide/getting_started.html) and [python](https://www.python.org/about/gettingstarted/) detailed under [Tools](#Tools).
+Deployment using Integrated Development Environment (IDE) or local enviornment may require additional steps such as configuring [AWS Cloud Development Kit](https://docs.aws.amazon.com/cdk/v2/guide/getting_started.html) and [python](https://www.python.org/about/gettingstarted/) detailed under [Tools](#Tools).
 
 Before deploying the guidance code, ensure that the following required tools have been installed in your IDE:
 
