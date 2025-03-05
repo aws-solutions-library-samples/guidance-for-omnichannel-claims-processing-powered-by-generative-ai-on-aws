@@ -1,16 +1,3 @@
 {
-    "region":"us-east-1",
-    "Auth":{
-        "Cognito":{
-            "userPoolClientId":"6ui4d24rvhkit40gaehihqvan9",
-            "userPoolId":"us-east-1_M88XyDYgR",
-            "identityPoolId":"us-east-1:d3a4c739-0c1a-40e7-b352-b875f6fa484b"
-            }}
-            ,
-    "API":{
-        "REST":{
-            "RestApi":{"endpoint":"https://d30x39xvn79cm6.cloudfront.net/api/v1"},
-            "WebSocketApi":{"endpoint":"wss://d30x39xvn79cm6.cloudfront.net/wss/"}
-            }
-            }
+SAMPLE
 }
