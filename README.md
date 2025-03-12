@@ -82,7 +82,7 @@ The above image represents an architecture that leverages various AWS services a
 
 9. AWS Lambda picks the messages from Amazon SQS and notifies the claimant the status of the claim request via Amazon Connect.
 
-10. AWS Lambda in a VPC picks the messages from Amazon SQS and updates 3rd party applications for further downstream processing (if required).
+10. AWS Lambda in a VPC picks the messages from Amazon SQS and updates 3rd party applications such as [Stripe](https://stripe.com/), [Guidewire](https://www.guidewire.com/), [Socotra](https://www.socotra.com/), etc for further downstream processing (if required).
 
 
 
