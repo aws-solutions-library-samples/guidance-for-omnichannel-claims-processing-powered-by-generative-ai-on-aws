@@ -239,8 +239,8 @@ class ClaimsProcessingStack1(Stack):
 
         
         allowed_origins = [
-            'http://localhost:3000',
-            'https://d1k95x9rijj02c.cloudfront.net'  # Add your production domain
+            'http://localhost:3000', # Remove this if you dont need to test it from locally
+            'https://XXXXXXX.cloudfront.net'  # Add your production domain
         ]
         # Create S3 bucket 
         self.s3_bucket = s3.Bucket(
