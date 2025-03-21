@@ -47,7 +47,6 @@ export SMS_Origination_number_ARN="XXX"
 export CustomerPhone="XXX"
 
 
-
 export execution="first"
 
 

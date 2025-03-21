@@ -86,15 +86,15 @@ class ClaimsProcessingStack1(Stack):
             effect=iam.Effect.ALLOW,
             actions=["bedrock:InvokeModel","bedrock:ListFoundationModels","bedrock:Retrieve","bedrock:RetrieveAndGenerate"],
             resources=[
-                "arn:aws:bedrock:*::foundation-model/anthropic.claude-3-haiku-20240307-v1:0",
-                "arn:aws:bedrock:*::foundation-model/anthropic.claude-3-5-haiku-20241022-v1:0",
-                "arn:aws:bedrock:*::foundation-model/anthropic.claude-v2:1",
-                "arn:aws:bedrock:*::foundation-model/anthropic.claude-v2",
-                "arn:aws:bedrock:*::foundation-model/amazon.nova-pro-v1:0",
-                "arn:aws:bedrock:*::foundation-model/amazon.titan-embed-text-v1",
-                "arn:aws:bedrock:*::foundation-model/amazon.titan-embed-text-v2:0",
-                #"arn:aws:bedrock:*:*:knowledge-base/"+BedrockKBID,  
-                "arn:aws:bedrock:*:*:knowledge-base/*" #If you have a Knowledge base, you can comment out this line and provide the ID in the above line
+                "arn:aws:bedrock:::foundation-model/anthropic.claude-3-haiku-20240307-v1:0",
+                "arn:aws:bedrock:::foundation-model/anthropic.claude-3-5-haiku-20241022-v1:0",
+                "arn:aws:bedrock:::foundation-model/anthropic.claude-v2:1",
+                "arn:aws:bedrock:::foundation-model/anthropic.claude-v2",
+                "arn:aws:bedrock:::foundation-model/amazon.nova-pro-v1:0",
+                "arn:aws:bedrock:::foundation-model/amazon.titan-embed-text-v1",
+                "arn:aws:bedrock:::foundation-model/amazon.titan-embed-text-v2:0",
+                #"arn:aws:bedrock:::knowledge-base/"+BedrockKBID,  
+                "arn:aws:bedrock:::knowledge-base/*" #If you have a Knowledge base, you can comment out this line and provide the ID in the above line
             ]
         )
 
@@ -435,22 +435,22 @@ class ClaimsProcessingStack1(Stack):
             billing_mode=dynamodb.BillingMode.PAY_PER_REQUEST,
             removal_policy=RemovalPolicy.DESTROY
             )
-        DDB_table_NewClaim.add_global_secondary_index(
-        partition_key=dynamodb.Attribute(name="case_status", type=dynamodb.AttributeType.STRING),
-        index_name="case_status-index"
-        )
-        DDB_table_NewClaim.add_global_secondary_index(
-        partition_key=dynamodb.Attribute(name="CustomerEmail", type=dynamodb.AttributeType.STRING),
-        index_name="CustomerEmail-index"
-        )
-        DDB_table_NewClaim.add_global_secondary_index(
-        partition_key=dynamodb.Attribute(name="CustomerPhone", type=dynamodb.AttributeType.STRING),
-        index_name="CustomerPhone-index"
-        )  
-        DDB_table_NewClaim.add_global_secondary_index(
-        partition_key=dynamodb.Attribute(name="PolicyNumber", type=dynamodb.AttributeType.STRING),
-        index_name="PolicyNumber-index"
-        )   
+        # DDB_table_NewClaim.add_global_secondary_index(
+        # partition_key=dynamodb.Attribute(name="case_status", type=dynamodb.AttributeType.STRING),
+        # index_name="case_status-index"
+        # )
+        # DDB_table_NewClaim.add_global_secondary_index(
+        # partition_key=dynamodb.Attribute(name="CustomerEmail", type=dynamodb.AttributeType.STRING),
+        # index_name="CustomerEmail-index"
+        # )
+        # DDB_table_NewClaim.add_global_secondary_index(
+        # partition_key=dynamodb.Attribute(name="CustomerPhone", type=dynamodb.AttributeType.STRING),
+        # index_name="CustomerPhone-index"
+        # )  
+        # DDB_table_NewClaim.add_global_secondary_index(
+        # partition_key=dynamodb.Attribute(name="PolicyNumber", type=dynamodb.AttributeType.STRING),
+        # index_name="PolicyNumber-index"
+        # )   
 
 
         self.dynamodb_policy_statement =iam.PolicyStatement(
@@ -471,7 +471,7 @@ class ClaimsProcessingStack1(Stack):
                 f"arn:aws:dynamodb:{self.region_id}:{self.account_id}:table/{self.DDBtableFM}",
                 f"arn:aws:dynamodb:{self.region_id}:{self.account_id}:table/{self.DDBtableVehiclePricing}",
                 f"arn:aws:dynamodb:{self.region_id}:{self.account_id}:table/{self.DDBtableCustomerInfo}",
-                f"arn:aws:dynamodb:{self.region_id}:{self.account_id}:table/{self.DDBtableNewClaim}/index/*"
+                #f"arn:aws:dynamodb:{self.region_id}:{self.account_id}:table/{self.DDBtableNewClaim}/index/*"
             ],
             effect=iam.Effect.ALLOW
         )

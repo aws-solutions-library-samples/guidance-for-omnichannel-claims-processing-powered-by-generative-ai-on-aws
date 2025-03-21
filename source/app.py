@@ -6,6 +6,9 @@ from claimsprocessing.claimsprocessing import ClaimsProcessingStack1
 #from claimsprocessing.claimsprocessing import ClaimsProcessingStack2
 
 
+# from aws_cdk import App, Aspects
+# from cdk_nag import AwsSolutionsChecks, NagSuppressions
+
 stack_variables={}
 stack_variables['DDBtableNewClaim']=os.getenv("DDBtableNewClaim"),
 stack_variables['DDBtableFM']=os.getenv("DDBtableFM"),
@@ -37,6 +40,10 @@ ClaimsProcessingStack1=ClaimsProcessingStack1(app, "ClaimsProcessingStack1",
 # ClaimsProcessingStack2=ClaimsProcessingStack2(app, "ClaimsProcessingStack2",
 #     ClaimsProcessingStack1=ClaimsProcessingStack1
 #     )
-    
+
+# # Add the AWS Solutions checks to the entire app
+# Aspects.of(app).add(AwsSolutionsChecks())
 
 app.synth()
+
+

@@ -25,12 +25,16 @@ export DDBtableNewClaim="GP-FSI-ClaimsProcessing-NewClaim"
 export DDBtableFM="GP-FSI-ClaimsProcessing-FM"
 export DDBtableVehiclePricing="GP-FSI-ClaimsProcessing-VehiclePricing"
 export DDBtableCustomerInfo="GP-FSI-ClaimsProcessing-CustomerInfo"
-#export Pinpoint_app_id="********" #dev account
-export Pinpoint_app_id="*******" #AWSOMe builder account
-#export Pinpoint_origination_number="+*******" #dev account
-export Pinpoint_origination_number="+****" #AWSOMe builder account
-#echo $DDBtableNewClaim
-#echo $DDBtableFM
+export SOCOTRA_ENDPOINT="XXX"
+export SOCOTRA_HOST="XXX"
+export SOCOTRA_USERNAME="XXX"
+export SOCOTRA_PASSWORD="XXX"
+export REACT_APP_STRIPE_PUBLISH_KEY="XXX"
+export GW_USERNAME="XXX"
+export GW_PASSWORD="XXX"
+export GW_BASE_URL="XXX"
+export SMS_Origination_number_ARN="XXX"
+export CustomerPhone="XXX"
 export BedrockKBID="*******" 
 export bucketname_input="gp-fsi-claims-processing"
 
