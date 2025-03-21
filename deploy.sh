@@ -47,9 +47,6 @@ export SMS_Origination_number_ARN="XXX"
 export CustomerPhone="XXX"
 
 
-export execution="first"
-
-
 # Bootstrap CDK if you have not done so before
 cdk init
 cdk bootstrap
@@ -57,8 +54,6 @@ cdk bootstrap
 cdk synth ClaimsProcessingStack1 
 echo "Deploying stack1"
 cdk deploy ClaimsProcessingStack1 --require-approval never
-
-
 
 cd $reactpath
 # Set your AWS region

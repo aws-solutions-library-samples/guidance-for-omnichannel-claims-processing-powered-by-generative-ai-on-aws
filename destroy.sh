@@ -54,5 +54,5 @@ else
     echo "No bot found with name: GP-FSI-Claims-Processing"
 fi
 
-cdk destroy --all
+cdk destroy ClaimsProcessingStack1
 echo "Clean up completed"

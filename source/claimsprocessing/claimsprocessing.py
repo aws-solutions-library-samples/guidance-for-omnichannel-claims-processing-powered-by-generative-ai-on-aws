@@ -84,19 +84,26 @@ class ClaimsProcessingStack1(Stack):
         # Define the Bedrock policy statement
         self.bedrock_policy_statement = iam.PolicyStatement(
             effect=iam.Effect.ALLOW,
-            actions=["bedrock:InvokeModel","bedrock:ListFoundationModels","bedrock:Retrieve","bedrock:RetrieveAndGenerate"],
+            actions=[
+                "bedrock:InvokeModel",
+                "bedrock:ListFoundationModels",
+                "bedrock:Retrieve",
+                "bedrock:RetrieveAndGenerate",
+                "bedrock:ListKnowledgeBases",
+                "bedrock:GetKnowledgeBase"
+            ],
             resources=[
-                "arn:aws:bedrock:::foundation-model/anthropic.claude-3-haiku-20240307-v1:0",
-                "arn:aws:bedrock:::foundation-model/anthropic.claude-3-5-haiku-20241022-v1:0",
-                "arn:aws:bedrock:::foundation-model/anthropic.claude-v2:1",
-                "arn:aws:bedrock:::foundation-model/anthropic.claude-v2",
-                "arn:aws:bedrock:::foundation-model/amazon.nova-pro-v1:0",
-                "arn:aws:bedrock:::foundation-model/amazon.titan-embed-text-v1",
-                "arn:aws:bedrock:::foundation-model/amazon.titan-embed-text-v2:0",
-                #"arn:aws:bedrock:::knowledge-base/"+BedrockKBID,  
-                "arn:aws:bedrock:::knowledge-base/*" #If you have a Knowledge base, you can comment out this line and provide the ID in the above line
+                f"arn:aws:bedrock:{self.region_id}::foundation-model/anthropic.claude-3-haiku-20240307-v1:0",
+                f"arn:aws:bedrock:{self.region_id}::foundation-model/anthropic.claude-3-5-haiku-20241022-v1:0",
+                f"arn:aws:bedrock:{self.region_id}::foundation-model/anthropic.claude-v2:1",
+                f"arn:aws:bedrock:{self.region_id}::foundation-model/anthropic.claude-v2",
+                f"arn:aws:bedrock:{self.region_id}::foundation-model/amazon.nova-pro-v1:0",
+                f"arn:aws:bedrock:{self.region_id}::foundation-model/amazon.titan-embed-text-v1",
+                f"arn:aws:bedrock:{self.region_id}::foundation-model/amazon.titan-embed-text-v2:0",
+                f"arn:aws:bedrock:{self.region_id}:{self.account_id}:knowledge-base/*"
             ]
         )
+
 
         
         # self.pinpoint_policy_statement = iam.PolicyStatement(
