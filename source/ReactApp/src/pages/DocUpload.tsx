@@ -332,8 +332,9 @@ const DocUpload = () => {
               <SpaceBetween size="m">
                 <FormField
                   label="Upload Vehicle Images"
-                  description="Upload up to 5 images related to the vehicle damage (JPG, PNG)"
+                  description="Upload up to 5 images related to the vehicle damage. Bedrock Converse API supports only the following formats - png, jpeg, gif, & webp."
                   constraintText="Maximum 5 images allowed"
+
                 >
                   <FileUpload
                     onChange={handleImageUpload}

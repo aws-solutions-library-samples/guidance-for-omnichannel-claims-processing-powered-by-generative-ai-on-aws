@@ -106,16 +106,6 @@ class ClaimsProcessingStack1(Stack):
 
 
         
-        # self.pinpoint_policy_statement = iam.PolicyStatement(
-        #         actions=[
-        #             "mobiletargeting:GetSmsChannel",
-        #             "mobiletargeting:SendMessages",
-        #             "mobiletargeting:PhoneNumberValidate"
-        #         ],
-        #         resources=[f"arn:aws:mobiletargeting:{self.region_id}:{self.account_id}:*"],
-        #         effect=iam.Effect.ALLOW
-        #     )
-        
         # Update the SMS policy statement in your claimsprocessing.py
         self.sms_policy_statement = iam.PolicyStatement(
             actions=[
@@ -422,14 +412,6 @@ class ClaimsProcessingStack1(Stack):
             billing_mode=dynamodb.BillingMode.PAY_PER_REQUEST,
             removal_policy=RemovalPolicy.DESTROY,
             )    
-        DDB_table_CustomerInfo.add_global_secondary_index(
-        partition_key=dynamodb.Attribute(name="CustomerEmail", type=dynamodb.AttributeType.STRING),
-        index_name="CustomerEmail-index"
-        )
-        DDB_table_CustomerInfo.add_global_secondary_index(
-        partition_key=dynamodb.Attribute(name="CustomerPhone", type=dynamodb.AttributeType.STRING),
-        index_name="CustomerPhone-index"
-        )
 
             
             
@@ -442,22 +424,7 @@ class ClaimsProcessingStack1(Stack):
             billing_mode=dynamodb.BillingMode.PAY_PER_REQUEST,
             removal_policy=RemovalPolicy.DESTROY
             )
-        # DDB_table_NewClaim.add_global_secondary_index(
-        # partition_key=dynamodb.Attribute(name="case_status", type=dynamodb.AttributeType.STRING),
-        # index_name="case_status-index"
-        # )
-        # DDB_table_NewClaim.add_global_secondary_index(
-        # partition_key=dynamodb.Attribute(name="CustomerEmail", type=dynamodb.AttributeType.STRING),
-        # index_name="CustomerEmail-index"
-        # )
-        # DDB_table_NewClaim.add_global_secondary_index(
-        # partition_key=dynamodb.Attribute(name="CustomerPhone", type=dynamodb.AttributeType.STRING),
-        # index_name="CustomerPhone-index"
-        # )  
-        # DDB_table_NewClaim.add_global_secondary_index(
-        # partition_key=dynamodb.Attribute(name="PolicyNumber", type=dynamodb.AttributeType.STRING),
-        # index_name="PolicyNumber-index"
-        # )   
+    
 
 
         self.dynamodb_policy_statement =iam.PolicyStatement(
@@ -477,8 +444,7 @@ class ClaimsProcessingStack1(Stack):
                 f"arn:aws:dynamodb:{self.region_id}:{self.account_id}:table/{self.DDBtableNewClaim}",
                 f"arn:aws:dynamodb:{self.region_id}:{self.account_id}:table/{self.DDBtableFM}",
                 f"arn:aws:dynamodb:{self.region_id}:{self.account_id}:table/{self.DDBtableVehiclePricing}",
-                f"arn:aws:dynamodb:{self.region_id}:{self.account_id}:table/{self.DDBtableCustomerInfo}",
-                #f"arn:aws:dynamodb:{self.region_id}:{self.account_id}:table/{self.DDBtableNewClaim}/index/*"
+                f"arn:aws:dynamodb:{self.region_id}:{self.account_id}:table/{self.DDBtableCustomerInfo}"
             ],
             effect=iam.Effect.ALLOW
         )
@@ -589,32 +555,19 @@ class ClaimsProcessingStack1(Stack):
             map_public_ip_on_launch=True
         )
 
-        # Create and configure public route table
-        public_route_table = ec2.CfnRouteTable(
-            self,
-            "PublicRouteTable",
-            vpc_id=vpc.vpc_id,
-            tags=[{"key": "Name", "value": "PublicRouteTable"}]
-        )
 
-        # Associate public subnet with public route table
-        ec2.CfnSubnetRouteTableAssociation(
+        # Add route to the existing public subnet's route table
+        public_subnet_route = ec2.CfnRoute(
             self,
-            "PublicSubnetRouteTableAssociation",
-            route_table_id=public_route_table.ref,
-            subnet_id=public_subnet.subnet_id
-        )
-
-        # Add route to Internet Gateway
-        publicroute=ec2.CfnRoute(
-            self,
-            "PublicRoute",
-            route_table_id=public_route_table.ref,
+            "PublicSubnetRoute",
+            route_table_id=public_subnet.route_table.route_table_id,  # Use the public subnet's route table
             destination_cidr_block="0.0.0.0/0",
             gateway_id=igw.ref
         )
 
-        publicroute.add_dependency(vpc_igw_attachment)
+        # Ensure the route is created after the IGW is attached
+        public_subnet_route.add_dependency(vpc_igw_attachment)
+
 
         # 4. Create Elastic IP
         eip = ec2.CfnEIP(
@@ -632,6 +585,7 @@ class ClaimsProcessingStack1(Stack):
             cidr_block="10.0.2.0/24",
             map_public_ip_on_launch=False
         )
+
 
 
        # Create Security Group for Lambda with all necessary rules
@@ -681,6 +635,21 @@ class ClaimsProcessingStack1(Stack):
         # Add explicit dependency on IGW attachment
         nat_gateway.add_dependency(vpc_igw_attachment)
 
+
+
+     
+        # Add route to the existing private subnet's route table
+        private_subnet_route = ec2.CfnRoute(
+            self,
+            "PrivateSubnetRoute",
+            route_table_id=private_subnet.route_table.route_table_id,  # Use the public subnet's route table
+            destination_cidr_block="0.0.0.0/0",
+            nat_gateway_id=nat_gateway.ref
+        )
+
+        # Ensure the route is created after the IGW is attached
+        private_subnet_route.add_dependency(nat_gateway)
+
         # Create private route table with NAT Gateway route
         private_route_table = ec2.CfnRouteTable(
             self,
@@ -688,7 +657,7 @@ class ClaimsProcessingStack1(Stack):
             vpc_id=vpc.vpc_id,
             tags=[{"key": "Name", "value": "PrivateRouteTable"}]
         )
-
+        
         # Add route to NAT Gateway with explicit dependency
         private_route = ec2.CfnRoute(
             self,
@@ -698,7 +667,7 @@ class ClaimsProcessingStack1(Stack):
             nat_gateway_id=nat_gateway.ref
         )
         private_route.add_dependency(nat_gateway)
-
+    
         # Associate private subnet with private route table
         private_route_table_assoc = ec2.CfnSubnetRouteTableAssociation(
             self,
@@ -707,7 +676,6 @@ class ClaimsProcessingStack1(Stack):
             subnet_id=private_subnet.subnet_id
         )
         private_route_table_assoc.add_dependency(private_route)
-
         
         # Define the  SQS_3P_integration_lambda  Lambda function
         SQS_3P_integration_lambda = lambda_.Function(

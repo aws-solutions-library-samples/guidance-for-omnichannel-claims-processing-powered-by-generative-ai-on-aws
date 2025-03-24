@@ -244,45 +244,11 @@ def image_analysis_updateitem(CaseNumber,s3_object,image_analysis_output,FileNam
     return response
 
 @exponential_backoff_retry()
-def image_analysis(file_type,image_base64,model_id,Image_prompt,vehicledata):
-    Image_prompt="Vehicle parts data is "+str(vehicledata)+"."+Image_prompt
+def image_analysis(file_type,image_base64,model_id,Image_prompt,vehicledata,CarMake_Model):
+    Image_prompt="Vehicle parts data is "+str(vehicledata)+". Car Make and Model is "+str(CarMake_Model)+"."+Image_prompt
     image_bytes = base64.b64decode(image_base64)
-    # prompt = {
-    #     "anthropic_version": "bedrock-2023-05-31",
-    #     "max_tokens": 1000,
-    #     "temperature": 0.5,
-    #     "system": Image_prompt,
-    #     "messages": [
-    #         {
-    #             "role": "user",
-    #             "content": [
-    #                 {
-    #                     "type": "image",
-    #                     "source": {
-    #                         "type": "base64",
-    #                         "media_type": file_type,
-    #                         "data": image_base64
-    #                     }
-    #                 },
-    #                 {
-    #                     "type": "text",
-    #                     "text": Image_prompt
-    #                 }
-    #             ]
-    #         }
-    #     ]
-    # }
-    # json_prompt = json.dumps(prompt)
-    # response = bedrock_client.invoke_model(body=json_prompt, modelId=model_id,
-    #                                 accept="application/json", contentType="application/json")
-    # # getting the response from Claude3 and parsing it to return to the end user
-    # response_body = json.loads(response.get('body').read())
-    # # the final string returned to the end user
-    # image_analysis_output = response_body['content'][0]['text'].replace("$","\\$")
-    # # returning the final string to the end user
-    # #print(image_llm_output) 
 
-    # Construct the request using Converse API structure
+    # Construct the request using Converse API structure - this is to enable the use of different FMs
     print(model_id)
     request = {
         'modelId': model_id,
@@ -389,7 +355,7 @@ def lambda_handler(event, context):
         print("License file")
         license_analysis(CaseNumber,bucket,key,CustomerName)
     elif "vehicle" in FileName:
-        image_analysis_output=image_analysis(file_type,image_base64,model_id,Image_prompt,vehicledata)
+        image_analysis_output=image_analysis(file_type,image_base64,model_id,Image_prompt,vehicledata,CarMake_Model)
         print(image_analysis_output)
         image_analysis_updateitem(CaseNumber,s3_object,image_analysis_output,FileNameWE)
         if "vehicle1" in FileName:

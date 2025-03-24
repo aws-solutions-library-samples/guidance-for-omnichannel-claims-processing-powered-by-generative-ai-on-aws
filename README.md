@@ -167,13 +167,7 @@ This Guidance uses AWS CDK. If you are using aws-cdk for the first time, please 
 
 ## Deployment Steps
 
-### 1. Clone the repository
-
-1. In your IDE, use the terminal to clone the repository:
-       ```
-       git clone https://github.com/aws-solutions-library-samples/guidance-for-omnichannel-claims-processing-powered-by-generative-ai-on-aws.git
-       ```
-### 2. Requesting Access to AWS Bedrock
+### 1. Requesting Access to AWS Bedrock
 
 1. Log in to the AWS Management Console
 2. Search for "Bedrock" in the search bar
@@ -188,7 +182,7 @@ This Guidance uses AWS CDK. If you are using aws-cdk for the first time, please 
 
 You will see the model access request with an in progress status. Getting access to the model and that change to be reflected in the console can take several minutes.
 
-### 3. Set up and verify customer experience services 
+### 2. Set up and verify customer experience services 
 
 If you have an existing Amazon Connect instance and wanted to use that instance, SKIP the instance creation step below and follow the steps to import the contact Flow (step 2). 
    
@@ -219,25 +213,34 @@ To set up a phone numer with Amazon Connect two way SMS enabled, follow the insu
 
 ### 2. CDK deployment
 
+   1. Clone the code repository. In your IDE, use the terminal to clone the repository:
 
-   1. Navigate to the folder: guidance-for-omnichannel-claims-processing-powered-by-generative-ai-on-aws using in yout IDE
+       ```
+       git clone https://github.com/aws-solutions-library-samples/guidance-for-omnichannel-claims-processing-powered-by-generative-ai-on-aws.git
+       ```
+
+   2. Navigate to the folder: guidance-for-omnichannel-claims-processing-powered-by-generative-ai-on-aws using in yout IDE
        ```
        cd guidance-for-omnichannel-claims-processing-powered-by-generative-ai-on-aws
        ```
-   2. Make changes to the default values given.
+   3. Make changes to the default values given.
 
       - The file named  `deploy.sh` takes care of deploying CDK stacks and deploying other necessary resources. You can edit this file to update the default/sample values provided:
          - SMS_Origination_number_ARN - ARN of the SMS number claimed via [Amazon Connect with SMS feature enabled](https://docs.aws.amazon.com/connect/latest/adminguide/setup-sms-messaging.html#get-sms-number)
          - CustomerPhone with a valid phone number to send/recieve SMS (eg: your cell number)   
-         - if you have wanted to integrate with [Socotra](https://www.socotra.com/) inusrance platform, then update these values
+         - if you have wanted to integrate with [Socotra](https://www.socotra.com/) insurance platform, then update these values
             - SOCOTRA_ENDPOINT, SOCOTRA_HOST, SOCOTRA_USERNAME, SOCOTRA_PASSWORD
             - SOCOTRA_External_PolicyHolderId1/2/3/4 with some some sample policy holder IDs
-         - If you have [Stripe](https://stripe.com/) payment processing integration to be enabled, updadate REACT_APP_STRIPE_PUBLISH_KEY with the Publishable API key
+         - if you have wanted to integrate with [Guidewire](https://www.guidewire.com/) claims platform, then update these values
+            - GW_USERNAME, GW_PASSWORD and GW_BASE_URL (eg: https://xxxxx.guidewire.net:443/rest)
+         - If you have [Stripe](https://stripe.com/) payment processing integration to be enabled, updadate REACT_APP_STRIPE_PUBLISH_KEY with the [Stripe Publishable API key](https://docs.stripe.com/keys)
 
-   3. **Run** the file named `deploy.sh`
+   4. **Run** the file named `deploy.sh` passing the target region as an input parameter
       ```
-       sh deploy.sh
+       sh deploy.sh <AWS Region>
        ```
+       Example: sh deploy.sh us-east-1
+
       The `deploy.sh` file on this folder will do the following things:
         1. This project is a Python Project. Commands to switch to the Virtual Env, activate virtual env and install the required dependencies in the virtual environment.
         2. Initialize CDK within the project using the command: ```cdk init```
@@ -253,7 +256,9 @@ To set up a phone numer with Amazon Connect two way SMS enabled, follow the insu
 
          You can change the resource names by editing the enviornment variables set in the `deploy.sh` file.
       
-      It will take approximately *20 minutes* to deploy the entire stack. 
+      It will take approximately *10 minutes* to deploy the entire stack. 
+
+      Note: If you wanted to deploy this CDK stack to more than one region in a single AWS account, you need to change the resource names to have the region post-fixed so that the stack execution won't throw the `resource exists` error.
 
 
    ### Deployment Validation
@@ -284,12 +289,20 @@ To set up a phone numer with Amazon Connect two way SMS enabled, follow the insu
 
 ### 3. Make updates based on CDK resources
 
-   1. Amazon Connect Changes Contact Flow changes
+   1. Informational: A sample Amazon Lex will be created by the Stack using the file named `loadsamples.py` under `claimsprocessing` folder. It will import a sample bot, buid it and creates an alias with `gp-fsi-claimprocessing-filenewclaim` Lambda associated for the Lambda codehook. The sample Amazon Lex `GP-FSI-ClaimsProcessing-sample.zip` shared as part of this guidance package is imported.
+   
+   If needed, you can manually import the sample Amazon Lex following [this](https://docs.aws.amazon.com/lex/latest/dg/export-to-lex.html) or given below :
+      - Download `GP-FSI-ClaimsProcessing-sample.zip` given under the path `source/Amazon Lex` 
+      - Using Amazon Lex console, under `Actions` use the `Import` opion to [import the Zip file to create the bot](https://docs.aws.amazon.com/lexv2/latest/dg/import.html)
+      - Select the bot and [build the bot](https://docs.aws.amazon.com/lexv2/latest/dg/building-bots.html) (Go to Versions -> All languages -> Language: English (US)), click `build` 
+      - [Deploy the bot](https://docs.aws.amazon.com/lexv2/latest/dg/deploying.html) - create a version of the latest build and create an alias with the latest version of the bot 
 
-      - [Add the Amazon Lex bot created/imported to the Amazon Connect instance](https://docs.aws.amazon.com/connect/latest/adminguide/amazon-lex.html) 
-      - Update Contact Flow imported: update `Get customer input` with the Lex details, and select a `queue` and publish the flow
+   2. Amazon Connect Changes Contact Flow changes
 
-   2. Allowlist the Amazon CloudFront URL in your Amazon Connect chat widget
+      - [Add the Amazon Lex bot created/imported to the Amazon Connect instance](https://docs.aws.amazon.com/connect/latest/adminguide/amazon-lex.html). The Lex bot is named "GP-FSI-Claims-Processing"
+      - Update Contact Flow imported: update `Get customer input` with the Lex chatbot details, and select a `queue` and publish the flow. You can make further changes to the Amazon Connect contact flow based on Amazon Lex intents if you prefer.
+
+   3. Allowlist the Amazon CloudFront URL in your Amazon Connect chat widget
       - Get the `CloudFrontURL` from the output of `ClaimsProcessingStack1` stack (CloudFront URL)
       - Add it as an approved domain to your Amazon Connect communication widget as instructed [here](https://docs.aws.amazon.com/connect/latest/adminguide/add-chat-to-website.html#chat-widget-domains)
 
@@ -306,15 +319,7 @@ To set up a phone numer with Amazon Connect two way SMS enabled, follow the insu
       - Now, create a new user by providing username, valid email address and temporary password to login to the application.
       - After this setup, you should be able to login and launch your application!
 
-   4. Informational: A sample Amazon Lex will be created by the Stack using the file named `loadsamples.py` under `claimsprocessing` folder. It will import a sample bot, buid it and creates an alias with `gp-fsi-claimprocessing-filenewclaim` Lambda associated for the Lambda codehook. The sample Amazon Lex `GP-FSI-ClaimsProcessing-sample.zip` shared as part of this guidance package is imported.
-   
-   If needed, you can manually import the sample Amazon Lex following [this](https://docs.aws.amazon.com/lex/latest/dg/export-to-lex.html) or given below :
-      - Download `GP-FSI-ClaimsProcessing-sample.zip` given under the path `source/Amazon Lex` 
-      - Using Amazon Lex console, under `Actions` use the `Import` opion to [import the Zip file to create the bot](https://docs.aws.amazon.com/lexv2/latest/dg/import.html)
-      - Select the bot and [build the bot](https://docs.aws.amazon.com/lexv2/latest/dg/building-bots.html) (Go to Versions -> All languages -> Language: English (US)), click `build` 
-      - [Deploy the bot](https://docs.aws.amazon.com/lexv2/latest/dg/deploying.html) - create a version of the latest build and create an alias with the latest version of the bot 
-
-   5. An Amazon Bedrock Knowledgebase named `GP-FSI-ClaimsProcessing` will be created by the stack and Amazon Bedrock knowledgebase sync job will be run by `loadsamples.py`. However, below given the instructions to create Amazon Bedrock Knowledgebase manually from AWS console if needed:
+   5. Informational: An Amazon Bedrock Knowledgebase named `GP-FSI-ClaimsProcessing` will be created by the stack and Amazon Bedrock knowledgebase sync job will be run by `loadsamples.py`. However, below given the instructions to create Amazon Bedrock Knowledgebase manually from AWS console if needed:
    
       - Navigate to Amazon Bedrock Knowledge base in AWS console 
       - Provide a knowledge base name.
@@ -351,6 +356,7 @@ To set up a phone numer with Amazon Connect two way SMS enabled, follow the insu
   - Using the case id, you can upload the supporting documents via `Upload Documents` page of the web app.
   - You will be promoted to upload your drivers license and accident images. For the drivers license, you can use the sample file named `DLRegular.png` kept under `source/Assets`. Once you select the file, remeber to click on the Upload button. Once you click the upload button, you will see a message saying `File Successfully Uploaded`
   - Once the images are uploaded, the document validation and image analysis will take place and the results will be updated to `GP-FSI-ClaimsProcessing-NewClaim` DynamoDB table by `gp-fsi-claimprocessing-docprocessor` Lambda. So if you see the results are not getting updated, check the Cloudwatch logs for this Lambda to identify if there are any issues.
+  - Amazon Bedrock Converse API is used in the backend code to make API calls. This API provides a consistent interface that works with all models that support messages. You can read more about Amazon Bedrock Converse API from [link 1](https://docs.aws.amazon.com/bedrock/latest/APIReference/API_runtime_Converse.html) and [link 2](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/bedrock-runtime/client/converse.html#)
  
 ## Adjudicate the claims
   -   For Agents to validate the supporting documents and adjudicate, use the `Adjuster` page of the web app.
@@ -365,7 +371,7 @@ To set up a phone numer with Amazon Connect two way SMS enabled, follow the insu
 
 ## External Claims System Integration
    - Using `External Claims System Integration` tab, adjuster can view policyholders information from 3rd Party Claims Systems such as Socotra, Guidewire, etc. 
-   - For the DEMO purpose, we have the API integration enabled for Socotra and Guideqire. This page wont work if you don't have the Claims system credentials updated as enviornment variables to `gp-fsi-claimsprocessing-3P-integration` Lambda function or provided correctly in the `deploy.sh` file.
+   - For the DEMO purpose, we have the API integration enabled for Socotra and Guidewire. This page will work if you have the Claims system credentials updated as the enviornment variables in the `deploy.sh` file.
 
 Note: To potentially achieve more accurate or tailored results, we encourage you to experiment with editing the prompts you provide to the model (edit the prompts given in `GP-FSI-ClaimsProcessing-FM` DynamoDB table). By modifying the prompts, you can often guide the model to generate outputs that are more closely aligned with your requirements.
 
@@ -405,7 +411,7 @@ By exploring these next steps, customers can tailor the Claims Processing applic
 1. **Terminate the CDK app**:
    - Navigate to the CDK app directory in your Cloud9 terminal. In your case, go to the git repo
    - Run the clean up script  `sh destroy.sh <aws-region>`  eg: `sh destroy.sh us-east-1`
-   - This should Amazon Lex imported, and Bedrock knowledgebase, delete the CloudFromation stacks and related resources
+   - This should Amazon Lex imported, delete the CDK stacks and related resources
 
 2. **Verify resource deletion**:
    - Log in to the AWS Management Console and navigate to the relevant services to ensure all the resources have been successfully deleted.
@@ -436,7 +442,7 @@ All notable changes to the version of this guidance package will be documented a
 
 1. Nov 19, 2024 - Initial version of the guidance package
 2. Feb 24, 2025 - Version 2 with the following changes:
-   - UI changed from Streamlit to React
+   - UI changed from Streamlit to React. The UI uses [Cloudscape design](https://cloudscape.design/).
    - Changed the LLM model to Amazon Nova pro
    - Integration with [Stripe](https://stripe.com/)
    - Integration with [Guidewire](https://www.guidewire.com/)

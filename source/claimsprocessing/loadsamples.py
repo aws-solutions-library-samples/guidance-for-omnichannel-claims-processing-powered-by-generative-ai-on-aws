@@ -15,26 +15,8 @@ bucket_name = f'gp-fsi-claims-processing-{account_id}' # replace it with your bu
 local_directory = "Knowledgebase/"
 s3_prefix = "Knowledgebase/"
 region_name = "us-east-1"  # default region
+region_name=os.environ['AWS_REGION']
 
-
-try:
-    s3_client.head_bucket(Bucket=bucket_name)
-    print(f'Bucket {bucket_name} Exists')
-    response = s3_client.get_bucket_location(Bucket=bucket_name)
-    print(response)
-    
-    # Handle the special case for us-east-1
-    location_constraint = response['LocationConstraint']
-    if location_constraint is None:
-        region_name = "us-east-1"
-    else:
-        region_name = location_constraint
-        
-    print(f"Region name: {region_name}")
-    os.environ['AWS_DEFAULT_REGION'] = region_name
-    
-except Exception as e:
-    print(f"Error: {str(e)}")
 
 print(f"Identity: {identity}")
 print(f"Account ID: {account_id}")
@@ -79,7 +61,7 @@ def create_cognito_user(user_pool_id, username, email, temporary_password):
             TemporaryPassword=temporary_password,
             MessageAction='SUPPRESS'  # Prevents sending welcome email
         )
-        print(f"User {username}/{email} created successfully with the temporory password {temporary_password} ")
+        print(f"User {email} created successfully with the temporory password {temporary_password} ")
     except:
         print(f"Failed to create user {username}. If you are running it for the second time the user {username}/{email} may already exists. Use the temporory password {temporary_password} ")
 
@@ -129,9 +111,22 @@ def loadsampledata(api_url,BedrockKBID):
     dynamodb_client = boto3.resource('dynamodb')
     DDBtableFM_table = dynamodb_client.Table(DDBtableFM)
     DDBtableFM_data=[
-            {"Active":"amazon-nova-pro","Image_Combine_prompt":"Summarize the Analaysis from these into 4-5 sentences","Image_prompt":"The given image is from an auto insurance claim. You are an expert auto insurance investigator with expertise in identifying make,model and color of car and infer the extent of damage to the car from the pictures. Make and model of the car can be detected by looking at the logo or emblem on the front grille, back or steering wheel. Detect and summarize the make, model and color of the car by looking at the image and call out if you see discrepencies between what you detected vs what is reported by the customer. Also summarize the damages to the car by looking at the front, back, top and side of the car. Ignore any aspects around the background. Articulate the impact of damages in detail and areas of damage and summarize it in 3-4 sentences. Include potential cost to repair and the labor involved using the sample vehicle parts data given. Always mention the repair estimate is just an indication and the final estimate will be provided based on further analysis by our experts. Start the output like the below:Based on the image uploaded , the car appears to be .... Explain why you think the car appears to be.... Specifically call out if the make of the car is different from what the customer reported when submitting a claim. Clearly indicate additional analysis by experts is needed to verify accuracy","knowledgeBaseId":BedrockKBID,"model_id":"amazon.nova-pro-v1:0","region_id":region_name,"Summary_prompt": "Using the Combined_vehicle_image_analysis_output and data the knowledgebase detailing the potential cost to repair, generate an estimate to repair or replace the vehicle parts impacted including the potential labor. If possible provide the break down cost and final estimated cost including labor. Always call out at the end If the Make and Model of vehicle images and vehicle cost data given are not matching","api_url":api_url} ,     
-            {"Active":"anthropic.claude-3-haiku","Image_Combine_prompt":"Summarize the Analaysis from these into 4-5 sentences","Image_prompt":"The given image is from an auto insurance claim. You are an expert auto insurance investigator with expertise in identifying make,model and color of car and infer the extent of damage to the car from the pictures. Make and model of the car can be detected by looking at the logo or emblem on the front grille, back or steering wheel. Detect and summarize the make, model and color of the car by looking at the image and call out if you see discrepencies between what you detected vs what is reported by the customer. Also summarize the damages to the car by looking at the front, back, top and side of the car. Ignore any aspects around the background. Articulate the impact of damages in detail and areas of damage and summarize it in 3-4 sentences. Include potential cost to repair and the labor involved using the sample vehicle parts data given. Always mention the repair estimate is just an indication and the final estimate will be provided based on further analysis by our experts. Start the output like the below:Based on the image uploaded , the car appears to be .... Explain why you think the car appears to be.... Specifically call out if the make of the car is different from what the customer reported when submitting a claim. Clearly indicate additional analysis by experts is needed to verify accuracy","knowledgeBaseId":BedrockKBID,"model_id":"anthropic.claude-3-5-haiku-20241022-v1:0","region_id":region_name,"Summary_prompt": "Using the Combined_vehicle_image_analysis_output and data the knowledgebase detailing the potential cost to repair, generate an estimate to repair or replace the vehicle parts impacted including the potential labor. If possible provide the break down cost and final estimated cost including labor. Always call out at the end If the Make and Model of vehicle images and vehicle cost data given are not matching","api_url":api_url}  ,    
-            {"Active":"Y","Image_Combine_prompt":"Summarize the Analaysis from these into 4-5 sentences","Image_prompt":"The given image is from an auto insurance claim. You are an expert auto insurance investigator with expertise in identifying make,model and color of car and infer the extent of damage to the car from the pictures. Make and model of the car can be detected by looking at the logo or emblem on the front grille, back or steering wheel. Detect and summarize the make, model and color of the car by looking at the image and call out if you see discrepencies between what you detected vs what is reported by the customer. Also summarize the damages to the car by looking at the front, back, top and side of the car. Ignore any aspects around the background. Articulate the impact of damages in detail and areas of damage and summarize it in 3-4 sentences. Include potential cost to repair and the labor involved using the sample vehicle parts data given. Always mention the repair estimate is just an indication and the final estimate will be provided based on further analysis by our experts. Start the output like the below:Based on the image uploaded , the car appears to be .... Explain why you think the car appears to be.... Specifically call out if the make of the car is different from what the customer reported when submitting a claim. Clearly indicate additional analysis by experts is needed to verify accuracy","knowledgeBaseId":BedrockKBID,"model_id":"amazon.nova-pro-v1:0","region_id":region_name,"Summary_prompt": "Using the Combined_vehicle_image_analysis_output and data the knowledgebase detailing the potential cost to repair, generate an estimate to repair or replace the vehicle parts impacted including the potential labor. If possible provide the break down cost and final estimated cost including labor. Always call out at the end If the Make and Model of vehicle images and vehicle cost data given are not matching","api_url":api_url}    ,  
+            {"Active":"amazon-nova-pro",
+             "Image_Combine_prompt":"Summarize the Analaysis from these into 4-5 sentences",
+             "Image_prompt":"You are an expert auto insurance investigator analyzing a claim image. FIRST, carefully examine the image to identify the exact vehicle make and model by checking the manufacturer's logo/emblem (on grille, back, or steering wheel), model badges, distinctive grille design, and body characteristics. This is a reported Car Make Model - if you observe ANY other manufacturer's logo or model, STOP immediately and report: 'CRITICAL MISMATCH: Image shows [actual vehicle observed] but reported vehicle is Car Make and Model.' Only proceed with further analysis if the vehicle identity is confirmed. If vehicle identity matches, provide a response starting with 'Based on the image uploaded, the car appears to be...' followed by your identification reasoning. Then conduct a detailed damage assessment examining front, back, top, and side areas. Describe the impact and damage in 3-4 clear sentences. Provide estimated repair costs and required labor based on provided parts data. Always conclude with: 'This repair estimate is preliminary. Final costs will be determined after detailed expert analysis.’",
+             "knowledgeBaseId":BedrockKBID,
+             "model_id":"amazon.nova-pro-v1:0",
+             "region_id":region_name,
+             "Summary_prompt": "Using the Combined_vehicle_image_analysis_output and data the knowledgebase detailing the potential cost to repair, generate an estimate to repair or replace the vehicle parts impacted including the potential labor. If possible provide the break down cost and final estimated cost including labor. Always call out at the end If the Make and Model of vehicle images and vehicle cost data given are not matching",
+             "api_url":api_url} ,    
+            {"Active":"Y",
+             "Image_Combine_prompt":"Summarize the Analaysis from these into 4-5 sentences",
+             "Image_prompt":"You are an expert auto insurance investigator analyzing a claim image. FIRST, carefully examine the image to identify the exact vehicle make and model by checking the manufacturer's logo/emblem (on grille, back, or steering wheel), model badges, distinctive grille design, and body characteristics. This is a reported Car Make Model - if you observe ANY other manufacturer's logo or model, STOP immediately and report: 'CRITICAL MISMATCH: Image shows [actual vehicle observed] but reported vehicle is Car Make and Model.' Only proceed with further analysis if the vehicle identity is confirmed. If vehicle identity matches, provide a response starting with 'Based on the image uploaded, the car appears to be...' followed by your identification reasoning. Then conduct a detailed damage assessment examining front, back, top, and side areas. Describe the impact and damage in 3-4 clear sentences. Provide estimated repair costs and required labor based on provided parts data. Always conclude with: 'This repair estimate is preliminary. Final costs will be determined after detailed expert analysis.’",
+             "knowledgeBaseId":BedrockKBID,
+             "model_id":"amazon.nova-pro-v1:0",
+             "region_id":region_name,
+             "Summary_prompt": "Using the Combined_vehicle_image_analysis_output and data the knowledgebase detailing the potential cost to repair, generate an estimate to repair or replace the vehicle parts impacted including the potential labor. If possible provide the break down cost and final estimated cost including labor. Always call out at the end If the Make and Model of vehicle images and vehicle cost data given are not matching",
+             "api_url":api_url} ,      
 ]
     for item in DDBtableFM_data:
         DDBtableFM_table.put_item(Item=item)

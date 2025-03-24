@@ -567,22 +567,37 @@ def lambda_handler(event, context):
         CustomerName = sqs_message.get('CustomerName')
         print(f"CustomerName: {CustomerName}")
 
-        # Call integration functions
-        print("Socotra Integration starting")
-        policy_locator, claim_locator, updated_claim = socotra_integration(
-            external_id, 
-            sqs_message, 
-            loss_date_ms, 
-            created_at_ms
-        )
-        print("Socotra Integration Completed")
-        print("Guidewire Integration starting")
-        claim_number = guidewire_integration(
-            PolicyNumber,
-            CustomerName,
-            loss_date
-        )
-        print("Guidewire Integration Completed")
+        try:
+            # Call integration functions
+            print("Socotra Integration starting")
+            policy_locator, claim_locator, updated_claim = socotra_integration(
+                external_id, 
+                sqs_message, 
+                loss_date_ms, 
+                created_at_ms
+            )
+            print("Socotra Integration Completed")
+        except:
+            policy_locator=""
+            claim_locator=""
+            updated_claim=""
+            print("Socotra Integration Failed - please check the credentials or access to Socotra")
+            pass
+        
+        try:
+            print("Guidewire Integration starting")
+            claim_number = guidewire_integration(
+                PolicyNumber,
+                CustomerName,
+                loss_date
+            )
+            print("Guidewire Integration Completed")
+        except:
+            claim_number = ""
+            print("Guidewire Integration Failed")
+            print("Guidewire Integration Failed - please check the credentials or access to Guidewire")
+            pass
+
         # Prepare response data
         response_data = {
             'message': 'Claim created and updated successfully in Socotra and Guidewire',

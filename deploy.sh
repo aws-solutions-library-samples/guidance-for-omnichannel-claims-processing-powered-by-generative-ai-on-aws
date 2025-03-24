@@ -1,6 +1,17 @@
 #!/bin/bash
 set -e  # Exit on error
 
+# Check if region parameter is provided
+if [ $# -eq 0 ]; then
+    echo "No region specified. Usage: ./deploy.sh <region-name>"
+    echo "Example: ./deploy.sh us-east-1"
+    echo "Example: sh deploy.sh us-east-1"
+    exit 1
+fi
+
+export AWS_REGION="$1"
+AWS_REGION="$1"
+
 sourcepath="$PWD/source"
 echo $sourcepath
 reactpath="$sourcepath/ReactApp"
@@ -47,6 +58,7 @@ export SMS_Origination_number_ARN="XXX"
 export CustomerPhone="XXX"
 
 
+
 # Bootstrap CDK if you have not done so before
 cdk init
 cdk bootstrap
@@ -55,9 +67,11 @@ cdk synth ClaimsProcessingStack1
 echo "Deploying stack1"
 cdk deploy ClaimsProcessingStack1 --require-approval never
 
+# exit 1
+
 cd $reactpath
-# Set your AWS region
-AWS_REGION="us-east-1"
+# # Set your AWS region
+# AWS_REGION="us-east-1"
 
 # Path prefix for SSM parameters
 SSM_PATH="/GP-FSI-ClaimsProcessing"
