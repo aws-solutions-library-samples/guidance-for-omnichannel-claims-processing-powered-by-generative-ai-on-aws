@@ -159,7 +159,12 @@ Before deploying the guidance code, ensure that the following required tools hav
 
 ### Supported Regions
 
-The guidance package is well suited to be deployed in `us-west-2` and `us-east-1` regions. However you can verify the availability of services listed in the architecture above (specifcally Amazon Bedrock, AWS End User Messaging, Amazon Connect and Amazon Lex) and opt a region where all those services are supported.
+The guidance package is well suited to be deployed in `us-east-1` and `us-west-2` regions. However you can verify the availability of services listed in the architecture above (specifcally Amazon Bedrock, AWS End User Messaging, Amazon Connect and Amazon Lex) and opt a region where all those services are supported.
+
+AWS WAF dependency: This is required because CloudFront WAF WebACLs must be created in us-east-1, regardless of where your main application stack is deployed. If deploying this stack in a region other than us-east-1:
+1. Create a separate stack for the WAF WebACL in us-east-1
+2. Deploy the WAF stack separately before deploying this main stack
+3. Update the CloudFront distribution to use the WAF WebACL ARN from us-east-1
 
 ### AWS CDK
 
