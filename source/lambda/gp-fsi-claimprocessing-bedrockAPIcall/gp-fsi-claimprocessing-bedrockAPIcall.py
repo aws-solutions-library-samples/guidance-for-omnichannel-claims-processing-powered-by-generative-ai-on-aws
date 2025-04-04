@@ -25,9 +25,6 @@ import os
 
 numb=round(random()*100000)
 
-os.environ['AWS_DEFAULT_REGION'] = 'us-east-1'
-
-
 bedrock_agent_client = boto3.client('bedrock-agent-runtime')
 
 #DDB_table_FM= os.environ["DDB_table_FM"]

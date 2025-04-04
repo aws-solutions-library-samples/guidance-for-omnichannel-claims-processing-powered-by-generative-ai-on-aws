@@ -834,6 +834,7 @@ class ClaimsProcessingStack1(Stack):
             handler="gp-fsi-claimprocessing-bedrockAPIcall.lambda_handler",  # File name.function name
             environment= {
                 "DDB_table_FM": self.DDBtableFM
+
             },
         )
         bedrockAPIcall_lambda.role.add_to_principal_policy(self.dynamodb_policy_statement)
@@ -951,21 +952,26 @@ class ClaimsProcessingStack1(Stack):
             api=self.rest_api
         )
 
-        # Deploy documents to S3
-        s3_deployment.BucketDeployment(
-            self, 'gp_claimsprocessingDocsUpload',
-            sources=[s3_deployment.Source.asset("Knowledgebase/")],
-            destination_bucket=self.s3_bucket
-        )
 
-        # Now you can safely reference the s3_bucket and distribution
-        s3_deployment.BucketDeployment(
-            self, "DeployReactApp",
-            sources=[s3_deployment.Source.asset("ReactApp/build")],
-            destination_bucket=self.s3_bucket,
-            distribution=self.distribution,
-            distribution_paths=["/*"]
-        )
+    # Moving this to loadsamples.py to avoid the sync delays and timeouts duer to the number of npm files when the CDK is destroyed
+        # # Deploy documents to S3
+        # s3_deployment.BucketDeployment(
+        #     self, 'gp_claimsprocessingDocsUpload',
+        #     sources=[s3_deployment.Source.asset("Knowledgebase/")],
+        #     destination_bucket=self.s3_bucket
+        # )
+
+        # Moving this to loadsamples.py to avoid the sync delays and timeouts duer to the number of npm files when the CDK is destroyed
+
+        # # Now you can safely reference the s3_bucket and distribution
+        # s3_deployment.BucketDeployment(
+        #     self, "DeployReactApp",
+        #     sources=[s3_deployment.Source.asset("ReactApp/build")],
+        #     destination_bucket=self.s3_bucket,
+        #     distribution=self.distribution,
+        #     distribution_paths=["/*"]
+        # )
+
 
 
         # Define the gp-fsi-claimsprocessing-3P-integration Lambda function

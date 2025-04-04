@@ -131,7 +131,8 @@ Before deploying the guidance code, ensure that the following required tools hav
 - To set up Amazon Bedrock Knoledgebase through CDK, we use `generative-ai-cdk-constructs`, a custom library (https://github.com/awslabs/generative-ai-cdk-constructs/blob/main/src/cdk-lib/bedrock/README.md) and it needs [Docker](https://docs.docker.com/engine/install/) to be running on your IDE. 
 - [Docker](https://docs.docker.com/get-started/get-docker/) installed
    - Note: [buildx](https://github.com/docker/buildx) is also required. For Windows and macOS buildx is included in [Docker Desktop](https://docs.docker.com/desktop/)
-   
+   - If the docker is NOT running, you may receive the following error while running the CDK: "RuntimeError: docker exited with status 1"
+
 ### AWS account requirements
 
 **Required resources:**
@@ -165,6 +166,7 @@ AWS WAF dependency: This is required because CloudFront WAF WebACLs must be crea
 1. Create a separate stack for the WAF WebACL in us-east-1
 2. Deploy the WAF stack separately before deploying this main stack
 3. Update the CloudFront distribution to use the WAF WebACL ARN from us-east-1
+
 
 ### AWS CDK
 
@@ -262,6 +264,7 @@ To set up a phone numer with Amazon Connect two way SMS enabled, follow the insu
          You can change the resource names by editing the enviornment variables set in the `deploy.sh` file.
       
       It will take approximately *10 minutes* to deploy the entire stack. 
+      The python file 'loadsamples.py' takes 5-7 minutes.
 
       Note: If you wanted to deploy this CDK stack to more than one region in a single AWS account, you need to change the resource names to have the region post-fixed so that the stack execution won't throw the `resource exists` error.
 
@@ -415,8 +418,8 @@ By exploring these next steps, customers can tailor the Claims Processing applic
 
 1. **Terminate the CDK app**:
    - Navigate to the CDK app directory in your Cloud9 terminal. In your case, go to the git repo
-   - Run the clean up script  `sh destroy.sh <aws-region>`  eg: `sh destroy.sh us-east-1`
-   - This should Amazon Lex imported, delete the CDK stacks and related resources
+   - Run the clean up script  `sh destroy.sh <aws-region>`  eg: `sh destroy.sh us-east-1` . You will be prompted to confirm that the delte can be initiated.
+   - This should remove the Amazon Lex chatbot imported and all the AWS resources created by the CDK stacks
 
 2. **Verify resource deletion**:
    - Log in to the AWS Management Console and navigate to the relevant services to ensure all the resources have been successfully deleted.
@@ -453,6 +456,8 @@ All notable changes to the version of this guidance package will be documented a
    - Integration with [Guidewire](https://www.guidewire.com/)
    - Integration with [Socotra](https://www.socotra.com/)
    - Changed Amazon Pinpoint SMS to AWS End User Messaging SMS feature
+
+
 
 ## Notices
 

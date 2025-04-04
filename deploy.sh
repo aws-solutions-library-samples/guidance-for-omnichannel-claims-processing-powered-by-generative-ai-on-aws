@@ -24,11 +24,18 @@ cd $sourcepath
 # First, remove any existing virtual environment
 rm -rf /tmp/.venv
 
-# Install dependencies
+# Create a new virtual environment
+python3 -m venv /tmp/.venv
+
+# Activate the virtual environment
+source /tmp/.venv/bin/activate
+
+# Install dependencies within the virtual environment
 python3 -m pip install --upgrade pip
-pip install publication  # Add this line to explicitly install publication
+pip install publication
 pip install -r requirements.txt
 pip install aws-cdk-lib constructs
+
 
 # Set environment variables
 export DDBtableNewClaim="GP-FSI-ClaimsProcessing-NewClaim"
@@ -67,7 +74,7 @@ cdk synth ClaimsProcessingStack1
 echo "Deploying stack1"
 cdk deploy ClaimsProcessingStack1 --require-approval never
 
-# exit 1
+#exit 1
 
 cd $reactpath
 # # Set your AWS region
@@ -141,10 +148,13 @@ export execution="second"
 # Navigate to infrastructure directory
 cd $sourcepath
 
-# Deploy the stack
-echo "Re-Deploying CDK stack to make sure the new ReactApp build files are uploaded..."
-cdk deploy ClaimsProcessingStack1 --require-approval never
+# # Deploy the stack
+# echo "Re-Deploying CDK stack to make sure the new ReactApp build files are uploaded..."
+# cdk deploy ClaimsProcessingStack1 --require-approval never
 
-echo "Running loadsamples.py to load sample data to dynamodb tables and import the sample Amazon Lex chatbot"
+# Activate the virtual environment
+source /tmp/.venv/bin/activate
+pip install requests
+echo "Running loadsamples.py to load sample data to dynamodb tables and import the sample Amazon Lex chatbot and upload the react build files to S3"
 python3 "$PWD/claimsprocessing/loadsamples.py"
 

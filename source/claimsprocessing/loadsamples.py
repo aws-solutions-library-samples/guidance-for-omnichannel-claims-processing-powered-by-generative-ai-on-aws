@@ -12,9 +12,9 @@ account_id = boto3.client('sts').get_caller_identity().get('Account')
 identity = boto3.client('sts').get_caller_identity()['Arn']
 s3_client = boto3.client('s3')
 bucket_name = f'gp-fsi-claims-processing-{account_id}' # replace it with your bucket name.
-local_directory = "Knowledgebase/"
-s3_prefix = "Knowledgebase/"
-region_name = "us-east-1"  # default region
+kb_local_directory = "Knowledgebase/"
+kb_s3_prefix = "Knowledgebase/"
+reactapp_local_directory = "ReactApp/build/"
 region_name=os.environ['AWS_REGION']
 
 
@@ -79,6 +79,10 @@ def getAPIInfo():
         if "AWS::ApiGateway::RestApi"==values['ResourceType']:
             api_url=f"https://{values['PhysicalResourceId']}.execute-api.{region_name}.amazonaws.com/dev/lambda" 
             print(api_url)
+        if "AWS::CloudFront::Distribution"==values['ResourceType']:
+            Distribution=f"{values['PhysicalResourceId']}" 
+            print(Distribution)
+
         if "AWS::Bedrock::KnowledgeBase"==values['ResourceType']:
             BedrockKBID=f"{values['PhysicalResourceId']}" 
             print(BedrockKBID)
@@ -104,7 +108,7 @@ def getAPIInfo():
                 print(DomainName)
 
 
-    return api_url,BedrockKBID,dataSourceId,userpoolid,DomainName
+    return api_url,BedrockKBID,dataSourceId,userpoolid,DomainName,Distribution
 
 
 def loadsampledata(api_url,BedrockKBID):
@@ -199,7 +203,194 @@ def interactive_sleep(seconds: int):
         time.sleep(1)
 
 
-def upload_directory_to_s3(local_directory, bucket_name, s3_prefix):
+def upload_reactapp_to_s3(local_directory, bucket_name, distribution):
+    """
+    Upload React app to S3 and set up CloudFront distribution
+    
+    Args:
+        local_directory: Local directory containing the React build files
+        bucket_name: Name of the S3 bucket to deploy to
+        distribution: CloudFront distribution ID
+    """
+    try:
+        # Initialize AWS clients
+        s3_client = boto3.client('s3')
+        cloudfront_client = boto3.client('cloudfront')
+        
+        # Specify the local directory containing the files
+        local_asset_dir = os.path.join(os.getcwd(), local_directory)
+        print(f"Local directory: {local_asset_dir}")
+
+        # Keep track of uploaded files
+        uploaded_files = set()
+        failed_uploads = []
+
+        # Get CloudFront distribution config
+        try:
+            dist_config = cloudfront_client.get_distribution_config(Id=distribution)
+            etag = dist_config['ETag']
+            
+            # Store the current distribution configuration
+            distribution_config = dist_config['DistributionConfig']
+            
+            # Update origin path if needed
+            if 'Origins' in distribution_config:
+                for origin in distribution_config['Origins'].get('Items', []):
+                    if 's3' in origin.get('DomainName', '').lower():
+                        origin['OriginPath'] = ''  # Reset origin path if needed
+            
+            # Update default root object
+            distribution_config['DefaultRootObject'] = 'index.html'
+            
+            # Update distribution with new config
+            print("Updating CloudFront distribution configuration...")
+            cloudfront_client.update_distribution(
+                DistributionConfig=distribution_config,
+                Id=distribution,
+                IfMatch=etag
+            )
+            
+        except ClientError as e:
+            print(f"Error configuring CloudFront distribution: {str(e)}")
+            raise
+
+        # Walk through the local directory and all subdirectories
+        for root, dirs, files in os.walk(local_asset_dir):
+            for file in files:
+                local_path = os.path.join(root, file)
+                
+                # Get the relative path from the build directory
+                relative_path = os.path.relpath(local_path, local_asset_dir)
+                
+                # Replace backslashes with forward slashes for consistency
+                s3_key = relative_path.replace('\\', '/')
+
+                # Set content type based on file extension
+                content_type = get_content_type(file)
+
+                try:
+                    print(f"Uploading {local_path} to s3://{bucket_name}/{s3_key}")
+                    
+                    # Upload file with appropriate content type and private ACL
+                    s3_client.upload_file(
+                        local_path,
+                        bucket_name,
+                        s3_key,
+                        ExtraArgs={
+                            'ACL': 'private',
+                            'ContentType': content_type,
+                            'CacheControl': get_cache_control(file)
+                        }
+                    )
+                    uploaded_files.add(s3_key)
+                    
+                except ClientError as e:
+                    error_msg = f"Error uploading {local_path}: {str(e)}"
+                    print(error_msg)
+                    failed_uploads.append({
+                        'file': local_path,
+                        'error': str(e)
+                    })
+
+        # Print upload summary
+        print("\nUpload Summary:")
+        print(f"Successfully uploaded: {len(uploaded_files)} files")
+        print(f"Failed uploads: {len(failed_uploads)}")
+
+        # Create CloudFront invalidation
+        invalidation_id = None
+        if uploaded_files:
+            try:
+                print(f"\nCreating CloudFront invalidation for distribution: {distribution}")
+                response = cloudfront_client.create_invalidation(
+                    DistributionId=distribution,
+                    InvalidationBatch={
+                        'Paths': {
+                            'Quantity': 1,
+                            'Items': ['/*']  # Invalidate all paths
+                        },
+                        'CallerReference': str(time.time())
+                    }
+                )
+                invalidation_id = response['Invalidation']['Id']
+                print(f"Invalidation created successfully. Invalidation ID: {invalidation_id}")
+
+                # Wait for invalidation to complete
+                print("Waiting for invalidation to complete...")
+                waiter = cloudfront_client.get_waiter('invalidation_completed')
+                waiter.wait(
+                    DistributionId=distribution,
+                    Id=invalidation_id,
+                    WaiterConfig={'Delay': 10, 'MaxAttempts': 30}
+                )
+                print("Invalidation completed successfully")
+
+                # Get the CloudFront domain name
+                dist_response = cloudfront_client.get_distribution(Id=distribution)
+                domain_name = dist_response['Distribution']['DomainName']
+                print(f"\nCloudFront Domain Name: https://{domain_name}")
+
+            except ClientError as e:
+                print(f"Error managing CloudFront distribution: {str(e)}")
+                invalidation_id = None
+
+        return {
+            'success': len(uploaded_files),
+            'failed': failed_uploads,
+            'uploaded_files': list(uploaded_files),
+            'cloudfront_invalidation_id': invalidation_id,
+            'cloudfront_domain': domain_name if 'domain_name' in locals() else None
+        }
+
+    except Exception as e:
+        print(f"Fatal error during upload process: {str(e)}")
+        raise
+
+def get_content_type(filename):
+    """
+    Determine the content type based on file extension
+    """
+    extension = os.path.splitext(filename)[1].lower()
+    content_types = {
+        '.html': 'text/html',
+        '.css': 'text/css',
+        '.js': 'application/javascript',
+        '.json': 'application/json',
+        '.png': 'image/png',
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.gif': 'image/gif',
+        '.svg': 'image/svg+xml',
+        '.ico': 'image/x-icon',
+        '.txt': 'text/plain',
+        '.map': 'application/json',
+        '.woff': 'font/woff',
+        '.woff2': 'font/woff2',
+        '.ttf': 'font/ttf',
+        '.eot': 'application/vnd.ms-fontobject'
+    }
+    return content_types.get(extension, 'application/octet-stream')
+
+def get_cache_control(filename):
+    """
+    Determine cache control headers based on file type
+    """
+    extension = os.path.splitext(filename)[1].lower()
+    
+    # Static assets that rarely change
+    static_extensions = {'.png', '.jpg', '.jpeg', '.gif', '.ico', '.woff', '.woff2', '.ttf', '.eot'}
+    
+    # JavaScript and CSS files
+    asset_extensions = {'.js', '.css', '.map'}
+    
+    if extension in static_extensions:
+        return 'public, max-age=31536000'  # 1 year
+    elif extension in asset_extensions:
+        return 'public, max-age=86400'  # 24 hours
+    else:
+        return 'no-cache, no-store, must-revalidate'  # 
+
+def upload_kb_to_s3(local_directory, bucket_name, s3_prefix):
 
     
     # Specify the local directory containing the Knowledge base files
@@ -377,12 +568,14 @@ def update_bucket_cors(bucket_name, domain):
 
 
 def main():
-    api_url,BedrockKBID,dataSourceId,userpoolid,DomainName=getAPIInfo()
+    api_url,BedrockKBID,dataSourceId,userpoolid,DomainName,Distribution=getAPIInfo()
     print("Updating S3 Cors")
     update_bucket_cors(bucket_name, DomainName)
     print("Updated S3 Cors")
+    print("Uploading React Application files to S3")
+    upload_reactapp_to_s3(reactapp_local_directory, bucket_name,Distribution)
     print("Uploading sample files for Bedrock Knowledge base S3")
-    upload_directory_to_s3(local_directory, bucket_name, s3_prefix)
+    upload_kb_to_s3(kb_local_directory, bucket_name, kb_s3_prefix)
     print("Running the Bedrock Knowledge base Sync job")
     ingestion (BedrockKBID,dataSourceId)
     print("Completed the Bedrock Knowledge base Sync job")
