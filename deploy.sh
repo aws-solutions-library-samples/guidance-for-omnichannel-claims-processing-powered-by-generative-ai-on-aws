@@ -138,6 +138,7 @@ fi
 
 # Re-Build React app
 echo "Re-Building React app..."
+npm install -g react-scripts
 npm install
 npm run build
 
